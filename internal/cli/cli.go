@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"regexp"
+
+	"github.com/brii26/release-signer/pkg/release"
 )
 
 var Version = "dev"
@@ -112,10 +114,22 @@ func defaultSign(p SignParams, stdout, stderr io.Writer) error {
 }
 
 func defaultVerify(p VerifyParams) VerifyResult {
+	in := release.VerifyInput{
+		ArtifactPath:   p.ArtifactPath,
+		BundlePath:     p.BundlePath,
+		TrustStorePath: p.TrustStorePath,
+		Package:        p.Package,
+		Version:        p.Version,
+	}
+	res := release.Verify(in)
 	return VerifyResult{
-		Valid:   false,
-		Status:  "INPUT_ERROR",
-		Message: "verify action not wired yet",
+		Valid:     res.Valid,
+		Status:    string(res.Status),
+		Message:   res.Message,
+		Algorithm: res.Algorithm,
+		KeyID:     res.KeyID,
+		Package:   res.Package,
+		Version:   res.Version,
 	}
 }
 
