@@ -11,3 +11,8 @@ test/keys/
 .github/
 docs/
 *.tmp
+.gemini/
+.idea/
+.vscode/
+*.swp
+*~
