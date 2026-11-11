@@ -65,7 +65,7 @@ jobs:
           if [ -z "$DIGEST" ]; then
             DIGEST="${IMAGE}:${VERSION}"
           fi
-          echo "### Container Image Published 🚀" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Container Image Published" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image Tag:** \`${IMAGE}:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Latest Tag:** \`${IMAGE}:latest\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Pinned Digest:** \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"
