@@ -25,4 +25,4 @@ bench:
 	go run ./bench
 
 docker:
-	docker build --build-arg VERSION=$(VERSION) -t release-signer:$(VERSION) .
+	docker build --platform linux/amd64 --build-arg VERSION=$(VERSION) -t release-signer:$(VERSION) .
