@@ -1,0 +1,4 @@
+Release Signer Test Fixture
+Hello from group 14 (P1, P2, P3)
+Testing UTF-8 multiline text.
+Line 4: release-signer v1.0.0
