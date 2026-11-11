@@ -1,0 +1,64 @@
+name: publish-image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag/version to publish (e.g. 1.0.0)'
+        required: false
+        default: 'dev'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Determine version
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${{ github.repository_owner }}/release-signer" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build container image
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          docker build \
+            --build-arg VERSION="${VERSION}" \
+            -t "${IMAGE}:${VERSION}" \
+            -t "${IMAGE}:latest" \
+            .
+
+      - name: Push container image
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          docker push "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:latest"
+
+      - name: Capture digest and write summary
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${VERSION}")
+          echo "### Container Image Published 🚀" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image Tag:** \`${IMAGE}:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Immutable Digest Reference:** \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"

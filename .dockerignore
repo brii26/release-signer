@@ -1,0 +1,13 @@
+.git
+bin/
+out/
+dist/
+results/
+bench/data/
+test/keys/
+**/*.key.pem
+**/*.key
+**/*.pem
+.github/
+docs/
+*.tmp
