@@ -9,6 +9,8 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/brii26/release-signer/pkg/keys"
+	"github.com/brii26/release-signer/pkg/profile"
 	"github.com/brii26/release-signer/pkg/release"
 )
 
@@ -106,7 +108,29 @@ var (
 )
 
 func defaultKeygen(p KeygenParams, stdout, stderr io.Writer) error {
-	return errors.New("keygen action not wired yet")
+	prof, ok := profile.Parse(p.Algorithm)
+	if !ok {
+		return fmt.Errorf("unsupported algorithm profile %q", p.Algorithm)
+	}
+
+	signer, err := keys.Generate(prof)
+	if err != nil {
+		return fmt.Errorf("failed to generate key %w", err)
+	}
+
+	privPath, pubPath, err := keys.WriteKeyPair(p.OutPrefix, signer, p.Force)
+	if err != nil {
+		return err
+	}
+
+	kid, err := keys.KeyID(signer.Public())
+	if err != nil {
+		return fmt.Errorf("failed to compute keyid: %w", err)
+	}
+
+	fmt.Fprintln(stdout, kid)
+	fmt.Fprintf(stderr, "wrote %s and %s\n", privPath, pubPath)
+	return nil
 }
 
 func defaultSign(p SignParams, stdout, stderr io.Writer) error {
