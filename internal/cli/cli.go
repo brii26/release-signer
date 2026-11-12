@@ -136,7 +136,19 @@ func defaultKeygen(p KeygenParams, stdout, stderr io.Writer) error {
 }
 
 func defaultSign(p SignParams, stdout, stderr io.Writer) error {
-	return errors.New("sign action not wired yet")
+	out, err := release.Sign(release.SignInput{
+		ArtifactPath: p.ArtifactPath,
+		Package:      p.Package,
+		Version:      p.Version,
+		KeyPath:      p.KeyPath,
+		OutPath:      p.OutBundle,
+		Force:        p.Force,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(stderr, "signed with %s (%s), wrote %s\n", out.KeyID, out.Profile, out.BundlePath)
+	return nil
 }
 
 func defaultVerify(p VerifyParams) VerifyResult {
