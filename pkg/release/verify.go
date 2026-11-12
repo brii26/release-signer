@@ -9,7 +9,6 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"errors"
@@ -18,8 +17,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 
+	"github.com/brii26/release-signer/pkg/bundle"
+	"github.com/brii26/release-signer/pkg/manifest"
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
@@ -146,136 +146,29 @@ func Verify(in VerifyInput) Result {
 	// =========================================================================
 
 	// --- 2a. Parse Bundle JSON ---
-	if len(bundleBytes) > MaxBundleSize {
-		return resultError(StatusFormatError, fmt.Sprintf("bundle size %d exceeds 64 KiB limit", len(bundleBytes)), nil)
-	}
-
-	bundleVal, err := strictjson.Parse(bundleBytes, MaxBundleSize)
+	manifestRaw, sigRaw, err := bundle.ParseStrict(bundleBytes)
 	if err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("malformed bundle JSON: %v", err), nil)
+		return resultError(StatusFormatError, fmt.Sprintf("bundle format error: %v", err), nil)
 	}
 
-	if err := strictjson.ExpectKeys(bundleVal, "schema", "manifest", "signature"); err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("bundle schema violation: %v", err), nil)
-	}
-
-	schemaField, _ := bundleVal.Field("schema")
-	bSchema, err := strictjson.AsString(schemaField)
-	if err != nil || bSchema != "minisign-bundle/v1" {
-		return resultError(StatusFormatError, "bundle schema must be 'minisign-bundle/v1'", nil)
-	}
-
-	manifestB64Field, _ := bundleVal.Field("manifest")
-	manifestB64, err := strictjson.AsString(manifestB64Field)
+	// --- 2b. Parse Manifest JSON & Canonical Check ---
+	parsedManifest, err := manifest.ParseStrict(manifestRaw)
 	if err != nil {
-		return resultError(StatusFormatError, "bundle manifest field must be a string", nil)
-	}
-
-	sigB64Field, _ := bundleVal.Field("signature")
-	sigB64, err := strictjson.AsString(sigB64Field)
-	if err != nil {
-		return resultError(StatusFormatError, "bundle signature field must be a string", nil)
-	}
-
-	manifestRaw, err := decodeStrictBase64(manifestB64)
-	if err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("invalid base64 in bundle manifest: %v", err), nil)
-	}
-
-	sigRaw, err := decodeStrictBase64(sigB64)
-	if err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("invalid base64 in bundle signature: %v", err), nil)
-	}
-
-	// --- 2b. Parse Manifest JSON ---
-	if len(manifestRaw) > MaxManifestSize {
-		return resultError(StatusFormatError, fmt.Sprintf("manifest size %d exceeds 16 KiB limit", len(manifestRaw)), nil)
-	}
-
-	manifestVal, err := strictjson.Parse(manifestRaw, MaxManifestSize)
-	if err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("malformed manifest JSON: %v", err), nil)
-	}
-
-	if err := strictjson.ExpectKeys(manifestVal, "schema", "package", "version", "algorithm", "keyid", "artifact"); err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("manifest keys violation: %v", err), nil)
-	}
-
-	mSchemaField, _ := manifestVal.Field("schema")
-	mSchema, err := strictjson.AsString(mSchemaField)
-	if err != nil || mSchema != "minisign-manifest/v1" {
-		return resultError(StatusFormatError, "manifest schema must be 'minisign-manifest/v1'", nil)
-	}
-
-	mPkgField, _ := manifestVal.Field("package")
-	mPkg, err := strictjson.AsString(mPkgField)
-	if err != nil || !packageRegex.MatchString(mPkg) {
-		return resultError(StatusFormatError, "invalid manifest package name", nil)
-	}
-
-	mVerField, _ := manifestVal.Field("version")
-	mVer, err := strictjson.AsString(mVerField)
-	if err != nil || mVer == "" {
-		return resultError(StatusFormatError, "manifest version must be non-empty string", nil)
-	}
-
-	mAlgoField, _ := manifestVal.Field("algorithm")
-	mAlgo, err := strictjson.AsString(mAlgoField)
-	if err != nil || mAlgo == "" {
-		return resultError(StatusFormatError, "manifest algorithm must be non-empty string", nil)
-	}
-
-	mKeyIDField, _ := manifestVal.Field("keyid")
-	mKeyID, err := strictjson.AsString(mKeyIDField)
-	if err != nil || !hex64Regex.MatchString(mKeyID) {
-		return resultError(StatusFormatError, "manifest keyid must be 64-character lowercase hex", nil)
-	}
-
-	mArtField, _ := manifestVal.Field("artifact")
-	if err := strictjson.ExpectKeys(mArtField, "name", "size", "sha256"); err != nil {
-		return resultError(StatusFormatError, fmt.Sprintf("manifest artifact object keys violation: %v", err), nil)
-	}
-
-	artNameField, _ := mArtField.Field("name")
-	artName, err := strictjson.AsString(artNameField)
-	if err != nil || artName == "" {
-		return resultError(StatusFormatError, "manifest artifact name must be non-empty string", nil)
-	}
-
-	artSizeField, _ := mArtField.Field("size")
-	artSize, err := strictjson.AsSafeInt(artSizeField)
-	if err != nil || artSize < 0 {
-		return resultError(StatusFormatError, fmt.Sprintf("manifest artifact size invalid: %v", err), nil)
-	}
-
-	artHashField, _ := mArtField.Field("sha256")
-	artHash, err := strictjson.AsString(artHashField)
-	if err != nil || !hex64Regex.MatchString(artHash) {
-		return resultError(StatusFormatError, "manifest artifact sha256 must be 64-character lowercase hex", nil)
+		return resultError(StatusFormatError, fmt.Sprintf("manifest format error: %v", err), nil)
 	}
 
 	m := &manifestData{
-		schema:       mSchema,
-		packageName:  mPkg,
-		version:      mVer,
-		algorithm:    mAlgo,
-		keyid:        mKeyID,
-		artifactName: artName,
-		artifactSize: artSize,
-		artifactHash: artHash,
+		schema:       parsedManifest.Schema,
+		packageName:  parsedManifest.Package,
+		version:      parsedManifest.Version,
+		algorithm:    parsedManifest.Algorithm,
+		keyid:        parsedManifest.KeyID,
+		artifactName: parsedManifest.Artifact.Name,
+		artifactSize: parsedManifest.Artifact.Size,
+		artifactHash: parsedManifest.Artifact.SHA256,
 	}
 
-	// --- 2c. Canonical Serialization Check for Manifest ---
-	expectedCanonical := fmt.Sprintf(
-		`{"schema":"%s","package":"%s","version":"%s","algorithm":"%s","keyid":"%s","artifact":{"name":"%s","size":%s,"sha256":"%s"}}`,
-		m.schema, m.packageName, m.version, m.algorithm, m.keyid, m.artifactName, strconv.FormatInt(m.artifactSize, 10), m.artifactHash,
-	)
-
-	if string(manifestRaw) != expectedCanonical {
-		return resultError(StatusFormatError, "manifest raw serialization is not canonical", m)
-	}
-
-	// --- 2d. Parse Trust Store JSON & Keys ---
+	// --- 2c. Parse Trust Store JSON & Keys ---
 	trustStoreVal, err := strictjson.Parse(trustStoreBytes, MaxTrustStoreSize)
 	if err != nil {
 		return resultError(StatusFormatError, fmt.Sprintf("malformed trust store JSON: %v", err), m)
@@ -490,19 +383,6 @@ func resultError(status Status, message string, m *manifestData) Result {
 func sha256Hex(data []byte) string {
 	h := sha256.Sum256(data)
 	return hex.EncodeToString(h[:])
-}
-
-func decodeStrictBase64(s string) ([]byte, error) {
-	if len(s) == 0 || len(s)%4 != 0 {
-		return nil, errors.New("base64 length must be positive multiple of 4")
-	}
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '+' || c == '/' || c == '=') {
-			return nil, fmt.Errorf("illegal character %q in base64", c)
-		}
-	}
-	return base64.StdEncoding.Strict().DecodeString(s)
 }
 
 func validateKeyAlgorithm(pub crypto.PublicKey, declaredAlgo string) error {

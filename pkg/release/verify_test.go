@@ -9,7 +9,6 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -18,7 +17,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/brii26/release-signer/pkg/strictjson"
+	"github.com/brii26/release-signer/pkg/bundle"
 )
 
 type testSigner struct {
@@ -134,16 +133,9 @@ func buildFixture(t *testing.T, dir string, s *testSigner, pkgName, version, art
 
 	sigBytes := s.sign(t, []byte(manifestCanonical))
 
-	manifestB64 := base64.StdEncoding.EncodeToString([]byte(manifestCanonical))
-	sigB64 := base64.StdEncoding.EncodeToString(sigBytes)
-
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		manifestB64, sigB64,
-	)
-
+	bundleBytes := bundle.Build([]byte(manifestCanonical), sigBytes)
 	bundlePath = filepath.Join(dir, "bundle.json")
-	if err := os.WriteFile(bundlePath, []byte(bundleJSON), 0644); err != nil {
+	if err := os.WriteFile(bundlePath, bundleBytes, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -261,26 +253,15 @@ func TestVerifyInvalidSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bundleVal, err := strictjson.Parse(bundleBytes, MaxBundleSize)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mField, _ := bundleVal.Field("manifest")
-	mStr, _ := strictjson.AsString(mField)
-
-	sField, _ := bundleVal.Field("signature")
-	sStr, _ := strictjson.AsString(sField)
-	sigRaw, err := base64.StdEncoding.DecodeString(sStr)
+	manifestRaw, sigRaw, err := bundle.ParseStrict(bundleBytes)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Flip 1 byte of the signature
 	sigRaw[0] ^= 0xFF
-	tamperedSigB64 := base64.StdEncoding.EncodeToString(sigRaw)
-
-	tamperedBundle := fmt.Sprintf(`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`, mStr, tamperedSigB64)
-	if err := os.WriteFile(bundlePath, []byte(tamperedBundle), 0644); err != nil {
+	tamperedBundle := bundle.Build(manifestRaw, sigRaw)
+	if err := os.WriteFile(bundlePath, tamperedBundle, 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -360,14 +341,9 @@ func TestVerifyNonCanonicalManifest(t *testing.T) {
 	)
 
 	sigBytes := signer.sign(t, []byte(nonCanonicalManifest))
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		base64.StdEncoding.EncodeToString([]byte(nonCanonicalManifest)),
-		base64.StdEncoding.EncodeToString(sigBytes),
-	)
-
+	bundleData := bundle.Build([]byte(nonCanonicalManifest), sigBytes)
 	bundlePath := filepath.Join(dir, "bundle.json")
-	_ = os.WriteFile(bundlePath, []byte(bundleJSON), 0644)
+	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
 	escapedPEM := ""
 	for i := 0; i < len(signer.pubPEM); i++ {
@@ -431,13 +407,9 @@ func TestVerifyUnsupportedAlgorithm(t *testing.T) {
 		signer.fingerprint, len(artData), sha256Hex(artData),
 	)
 
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		base64.StdEncoding.EncodeToString([]byte(manifestCanonical)),
-		base64.StdEncoding.EncodeToString(make([]byte, 64)),
-	)
+	bundleData := bundle.Build([]byte(manifestCanonical), make([]byte, 64))
 	bundlePath := filepath.Join(dir, "bundle.json")
-	_ = os.WriteFile(bundlePath, []byte(bundleJSON), 0644)
+	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]}]}`,
@@ -527,13 +499,9 @@ func TestVerifyECDSARZero(t *testing.T) {
 	rZeroSig := make([]byte, 64)
 	rZeroSig[63] = 1 // s = 1
 
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		base64.StdEncoding.EncodeToString([]byte(manifestCanonical)),
-		base64.StdEncoding.EncodeToString(rZeroSig),
-	)
+	bundleData := bundle.Build([]byte(manifestCanonical), rZeroSig)
 	bundlePath := filepath.Join(dir, "bundle.json")
-	_ = os.WriteFile(bundlePath, []byte(bundleJSON), 0644)
+	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"%s","public_key_pem":"%s","packages":["app"]}]}`,
@@ -600,13 +568,9 @@ func TestVerifyManifestVersionModifiedInvalidSignature(t *testing.T) {
 		signer.algo, signer.fingerprint, len(artData), sha256Hex(artData),
 	)
 
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		base64.StdEncoding.EncodeToString([]byte(manifestTampered)),
-		base64.StdEncoding.EncodeToString(sigBytes),
-	)
+	bundleData := bundle.Build([]byte(manifestTampered), sigBytes)
 	bundlePath := filepath.Join(dir, "bundle.json")
-	_ = os.WriteFile(bundlePath, []byte(bundleJSON), 0644)
+	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"%s","public_key_pem":"%s","packages":["app"]}]}`,
@@ -691,13 +655,9 @@ func TestVerifyKeyProfileMismatch(t *testing.T) {
 		ProfileRSAPSS, signer.fingerprint, len(artData), sha256Hex(artData),
 	)
 
-	bundleJSON := fmt.Sprintf(
-		`{"schema":"minisign-bundle/v1","manifest":"%s","signature":"%s"}`,
-		base64.StdEncoding.EncodeToString([]byte(manifestCanonical)),
-		base64.StdEncoding.EncodeToString(make([]byte, 384)),
-	)
+	bundleData := bundle.Build([]byte(manifestCanonical), make([]byte, 384))
 	bundlePath := filepath.Join(dir, "bundle.json")
-	_ = os.WriteFile(bundlePath, []byte(bundleJSON), 0644)
+	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
 	// Trust store has signer with ed25519 algorithm
 	trustJSON := fmt.Sprintf(
