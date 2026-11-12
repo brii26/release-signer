@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	packageRegex = regexp.MustCompile(`^[a-z0-9-_]+$`)
+	packageRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 	hex64Regex   = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
@@ -122,7 +122,7 @@ func Verify(in VerifyInput) Result {
 		return resultError(StatusInputError, "version string is required", nil)
 	}
 	if !packageRegex.MatchString(in.Package) {
-		return resultError(StatusInputError, fmt.Sprintf("invalid package name %q (must match ^[a-z0-9-_]+$)", in.Package), nil)
+		return resultError(StatusInputError, fmt.Sprintf("invalid package name %q (must match ^[a-z0-9][a-z0-9._-]{0,63}$)", in.Package), nil)
 	}
 
 	bundleBytes, err := os.ReadFile(in.BundlePath)
