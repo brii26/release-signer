@@ -8,10 +8,12 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/brii26/release-signer/pkg/keys"
 	"github.com/brii26/release-signer/pkg/profile"
 	"github.com/brii26/release-signer/pkg/release"
+	"github.com/brii26/release-signer/pkg/truststore"
 )
 
 var Version = "dev"
@@ -22,7 +24,7 @@ const (
 	ProfileEd25519 = "ed25519"
 )
 
-var packageRegex = regexp.MustCompile(`^[a-z0-9-_]+$`)
+var packageRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 
 // IsValidAlgorithm checks whether the algorithm matches one of the three profiles.
 func IsValidAlgorithm(a string) bool {
@@ -158,15 +160,58 @@ func defaultVerify(p VerifyParams) VerifyResult {
 }
 
 func defaultTrustAdd(p TrustAddParams, stdout, stderr io.Writer) error {
-	return errors.New("trust add action not wired yet")
+	pubPEM, err := os.ReadFile(p.KeyPath)
+	if err != nil {
+		return err
+	}
+	store, err := truststore.LoadOrEmpty(p.StorePath)
+	if err != nil {
+		return err
+	}
+	entry, changed, err := store.Add(pubPEM, p.Package)
+	if err != nil {
+		return err
+	}
+	if changed {
+		if err := store.Save(p.StorePath); err != nil {
+			return err
+		}
+	}
+	return printTrustEntry(stdout, entry)
 }
 
 func defaultTrustList(p TrustListParams, stdout, stderr io.Writer) error {
-	return errors.New("trust list action not wired yet")
+	store, err := truststore.Load(p.StorePath)
+	if err != nil {
+		return err
+	}
+	for _, entry := range store.Keys {
+		if err := printTrustEntry(stdout, entry); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func defaultTrustRemove(p TrustRemoveParams, stdout, stderr io.Writer) error {
-	return errors.New("trust remove action not wired yet")
+	store, err := truststore.Load(p.StorePath)
+	if err != nil {
+		return err
+	}
+	if err := store.Remove(p.KeyID); err != nil {
+		return err
+	}
+	if err := store.Save(p.StorePath); err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(stdout, "removed keyid=%s\n", p.KeyID)
+	return err
+}
+
+func printTrustEntry(w io.Writer, entry truststore.Entry) error {
+	_, err := fmt.Fprintf(w, "keyid=%s algorithm=%s packages=%s\n",
+		entry.KeyID, entry.Algorithm, strings.Join(entry.Packages, ","))
+	return err
 }
 
 const rootUsage = `release-signer: sign and verify software releases
@@ -203,7 +248,7 @@ Sign a release artifact and create a signature bundle JSON.
 
 Flags:
   --file string       Path to artifact file (required)
-  --package string    Package name (pattern [a-z0-9-_]+) (required)
+  --package string    Package name (pattern [a-z0-9][a-z0-9._-]{0,63}) (required)
   --version string    Release version string (required)
   --key string        Path to private key PEM (required)
   --out string        Path to output bundle JSON (required)
@@ -377,7 +422,7 @@ func runSign(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if !packageRegex.MatchString(*pkgName) {
-		fmt.Fprintf(stderr, "error: invalid package name %q (must match ^[a-z0-9-_]+$)\n", *pkgName)
+		fmt.Fprintf(stderr, "error: invalid package name %q (must match ^[a-z0-9][a-z0-9._-]{0,63}$)\n", *pkgName)
 		return 2
 	}
 
