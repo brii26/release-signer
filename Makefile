@@ -22,6 +22,7 @@ interop:
 	sh test/interop/run.sh
 
 bench:
+	sh bench/gen.sh
 	go run ./bench
 
 docker:
