@@ -1,0 +1,5 @@
+# One shared artifact per size; all profiles read these exact files.
+# sha256 bytes artifact
+785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9 1024 bench/data/small.bin
+fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83 1048576 bench/data/medium.bin
+4cbf988462cc3ba2e10e3aae9f5268546aa79016359fb45be7dd199c073125c0 104857600 bench/data/large.bin

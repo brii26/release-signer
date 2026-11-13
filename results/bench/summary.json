@@ -1,0 +1,540 @@
+{
+  "schema": "release-signer-benchmark/v1",
+  "utc": "2026-11-13T06:27:54Z",
+  "source_commit": "b5030bc0c86bd00cd4effddca964c0bc93a07c3c",
+  "source_dirty": false,
+  "samples": 30,
+  "warmups": 5,
+  "caveats": [
+    "Machine-local measurements before the final release tag; not publication-quality controlled-hardware evidence.",
+    "Serial rounds with five warmups and 30 samples, except keygen has 30 samples and no warmups; no CPU pinning, frequency locking, or cache eviction.",
+    "Artifacts and demo keys/trust store are prepared outside timing. Demo keys are generated once per profile and held fixed across artifacts and measured rounds, then deleted.",
+    "E2E includes subprocess startup, actual filesystem I/O, parsing, hashing, signing/verification, and bundle write/fsync; OS caches may be warm.",
+    "Sign/verify microbenchmarks use canonical manifest M, not artifact bytes or a prehash; profile-internal hashing is included."
+  ],
+  "files": [
+    {
+      "name": "small.bin",
+      "bytes": 1024,
+      "sha256": "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9"
+    },
+    {
+      "name": "medium.bin",
+      "bytes": 1048576,
+      "sha256": "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83"
+    },
+    {
+      "name": "large.bin",
+      "bytes": 104857600,
+      "sha256": "4cbf988462cc3ba2e10e3aae9f5268546aa79016359fb45be7dd199c073125c0"
+    }
+  ],
+  "measurements": [
+    {
+      "metric": "keygen",
+      "profile": "rsa-pss-sha256",
+      "artifact": "none",
+      "samples": 30,
+      "median_ns": 442853481,
+      "p95_ns": 1037330727,
+      "raw_csv": "raw/keygen_rsa-pss-sha256_none.csv"
+    },
+    {
+      "metric": "keygen",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "none",
+      "samples": 30,
+      "median_ns": 24821.5,
+      "p95_ns": 41097,
+      "raw_csv": "raw/keygen_ecdsa-p256-sha256_none.csv"
+    },
+    {
+      "metric": "keygen",
+      "profile": "ed25519",
+      "artifact": "none",
+      "samples": 30,
+      "median_ns": 33773,
+      "p95_ns": 34445,
+      "raw_csv": "raw/keygen_ed25519_none.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 1232,
+      "p95_ns": 1292,
+      "raw_csv": "raw/hash_rsa-pss-sha256_small.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 5179163.5,
+      "p95_ns": 5218929,
+      "raw_csv": "raw/sign_rsa-pss-sha256_small.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 221164.5,
+      "p95_ns": 287318,
+      "raw_csv": "raw/verify_rsa-pss-sha256_small.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 11754859,
+      "p95_ns": 12682272,
+      "raw_csv": "raw/e2e_sign_rsa-pss-sha256_small.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 5991019.5,
+      "p95_ns": 6805371,
+      "raw_csv": "raw/e2e_verify_rsa-pss-sha256_small.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 1252,
+      "p95_ns": 1523,
+      "raw_csv": "raw/hash_ecdsa-p256-sha256_small.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 57297.5,
+      "p95_ns": 77445,
+      "raw_csv": "raw/sign_ecdsa-p256-sha256_small.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 131240.5,
+      "p95_ns": 163827,
+      "raw_csv": "raw/verify_ecdsa-p256-sha256_small.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 6045732,
+      "p95_ns": 6857589,
+      "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_small.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 5698206,
+      "p95_ns": 6583686,
+      "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_small.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 1232,
+      "p95_ns": 1242,
+      "raw_csv": "raw/hash_ed25519_small.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 42079,
+      "p95_ns": 61385,
+      "raw_csv": "raw/sign_ed25519_small.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 97783.5,
+      "p95_ns": 129162,
+      "raw_csv": "raw/verify_ed25519_small.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 7880120,
+      "p95_ns": 9298352,
+      "raw_csv": "raw/e2e_sign_ed25519_small.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "samples": 30,
+      "median_ns": 6080528,
+      "p95_ns": 6941356,
+      "raw_csv": "raw/e2e_verify_ed25519_small.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 1071503,
+      "p95_ns": 1232149,
+      "raw_csv": "raw/hash_rsa-pss-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 5198866,
+      "p95_ns": 5465941,
+      "raw_csv": "raw/sign_rsa-pss-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 221194.5,
+      "p95_ns": 247784,
+      "raw_csv": "raw/verify_rsa-pss-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 13844835.5,
+      "p95_ns": 15370860,
+      "raw_csv": "raw/e2e_sign_rsa-pss-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 7481257.5,
+      "p95_ns": 8454863,
+      "raw_csv": "raw/e2e_verify_rsa-pss-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 1065992.5,
+      "p95_ns": 1098879,
+      "raw_csv": "raw/hash_ecdsa-p256-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 58540,
+      "p95_ns": 81553,
+      "raw_csv": "raw/sign_ecdsa-p256-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 130965,
+      "p95_ns": 144762,
+      "raw_csv": "raw/verify_ecdsa-p256-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 7573569.5,
+      "p95_ns": 8287858,
+      "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 7194400.5,
+      "p95_ns": 8476533,
+      "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_medium.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 1065060.5,
+      "p95_ns": 1152610,
+      "raw_csv": "raw/hash_ed25519_medium.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 42034,
+      "p95_ns": 42600,
+      "raw_csv": "raw/sign_ed25519_medium.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 97513,
+      "p95_ns": 116047,
+      "raw_csv": "raw/verify_ed25519_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 9977886,
+      "p95_ns": 10915933,
+      "raw_csv": "raw/e2e_sign_ed25519_medium.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "samples": 30,
+      "median_ns": 7587858,
+      "p95_ns": 8520846,
+      "raw_csv": "raw/e2e_verify_ed25519_medium.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 106697445,
+      "p95_ns": 106948021,
+      "raw_csv": "raw/hash_rsa-pss-sha256_large.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 5190616,
+      "p95_ns": 5240629,
+      "raw_csv": "raw/sign_rsa-pss-sha256_large.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 229104.5,
+      "p95_ns": 287970,
+      "raw_csv": "raw/verify_rsa-pss-sha256_large.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 146311298.5,
+      "p95_ns": 149439730,
+      "raw_csv": "raw/e2e_sign_rsa-pss-sha256_large.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 80617391.5,
+      "p95_ns": 85581113,
+      "raw_csv": "raw/e2e_verify_rsa-pss-sha256_large.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 72010013.5,
+      "p95_ns": 106940538,
+      "raw_csv": "raw/hash_ecdsa-p256-sha256_large.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 56601,
+      "p95_ns": 67967,
+      "raw_csv": "raw/sign_ecdsa-p256-sha256_large.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 131116,
+      "p95_ns": 140403,
+      "raw_csv": "raw/verify_ecdsa-p256-sha256_large.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 141084210,
+      "p95_ns": 145192709,
+      "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_large.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 81091713.5,
+      "p95_ns": 92835926,
+      "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_large.bin.csv"
+    },
+    {
+      "metric": "hash",
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 48760167.5,
+      "p95_ns": 49408248,
+      "raw_csv": "raw/hash_ed25519_large.bin.csv"
+    },
+    {
+      "metric": "sign",
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 18975.5,
+      "p95_ns": 19367,
+      "raw_csv": "raw/sign_ed25519_large.bin.csv"
+    },
+    {
+      "metric": "verify",
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 44839,
+      "p95_ns": 45004,
+      "raw_csv": "raw/verify_ed25519_large.bin.csv"
+    },
+    {
+      "metric": "e2e_sign",
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 142247800,
+      "p95_ns": 145693822,
+      "raw_csv": "raw/e2e_sign_ed25519_large.bin.csv"
+    },
+    {
+      "metric": "e2e_verify",
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "samples": 30,
+      "median_ns": 83891974,
+      "p95_ns": 137570977,
+      "raw_csv": "raw/e2e_verify_ed25519_large.bin.csv"
+    }
+  ],
+  "sizes": [
+    {
+      "profile": "rsa-pss-sha256",
+      "artifact": "small.bin",
+      "public_spki_der_bytes": 422,
+      "private_pkcs8_der_bytes": 1793,
+      "signature_bytes": 384,
+      "bundle_file_bytes": 994
+    },
+    {
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "small.bin",
+      "public_spki_der_bytes": 91,
+      "private_pkcs8_der_bytes": 138,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 574
+    },
+    {
+      "profile": "ed25519",
+      "artifact": "small.bin",
+      "public_spki_der_bytes": 44,
+      "private_pkcs8_der_bytes": 48,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 558
+    },
+    {
+      "profile": "rsa-pss-sha256",
+      "artifact": "medium.bin",
+      "public_spki_der_bytes": 422,
+      "private_pkcs8_der_bytes": 1793,
+      "signature_bytes": 384,
+      "bundle_file_bytes": 998
+    },
+    {
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "medium.bin",
+      "public_spki_der_bytes": 91,
+      "private_pkcs8_der_bytes": 138,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 578
+    },
+    {
+      "profile": "ed25519",
+      "artifact": "medium.bin",
+      "public_spki_der_bytes": 44,
+      "private_pkcs8_der_bytes": 48,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 566
+    },
+    {
+      "profile": "rsa-pss-sha256",
+      "artifact": "large.bin",
+      "public_spki_der_bytes": 422,
+      "private_pkcs8_der_bytes": 1793,
+      "signature_bytes": 384,
+      "bundle_file_bytes": 998
+    },
+    {
+      "profile": "ecdsa-p256-sha256",
+      "artifact": "large.bin",
+      "public_spki_der_bytes": 91,
+      "private_pkcs8_der_bytes": 138,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 578
+    },
+    {
+      "profile": "ed25519",
+      "artifact": "large.bin",
+      "public_spki_der_bytes": 44,
+      "private_pkcs8_der_bytes": 48,
+      "signature_bytes": 64,
+      "bundle_file_bytes": 566
+    }
+  ]
+}
