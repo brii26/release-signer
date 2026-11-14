@@ -22,7 +22,7 @@ sbom-test:
 	RESULTS_DIR=results/sbom go test ./test/sbom -count=1 -v
 
 docs-api:
-	go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0 --output 'docs/api/{{.Dir}}.md' ./pkg/...
+	go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0 --repository.url https://github.com/brii26/release-signer --repository.default-branch main --repository.path / --output 'docs/api/{{.Dir}}.md' ./pkg/...
 
 docs: docs-api
 	mkdocs build --strict
