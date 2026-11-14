@@ -206,7 +206,7 @@ func TestVerifyArtifactTamper(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, trustPath := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("original data"), []string{"app"})
 
-	// 1. Alter 1 byte in artifact
+	// Alter 1 byte in artifact
 	if err := os.WriteFile(artPath, []byte("origjnal data"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestVerifyArtifactTamper(t *testing.T) {
 		t.Fatalf("expected exit 1, got %d", res.ExitCode())
 	}
 
-	// 2. Add byte to artifact (size mismatch)
+	// Add byte to artifact (size mismatch)
 	if err := os.WriteFile(artPath, []byte("original data!"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func TestVerifyTrustStoreFormatErrors(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, _ := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("payload"), []string{"app"})
 
-	// 1. Fingerprint mismatch in trust store
+	// Fingerprint mismatch in trust store
 	badFp := "0000000000000000000000000000000000000000000000000000000000000000"
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]}]}`,
@@ -463,7 +463,7 @@ func TestVerifyTrustStoreFormatErrors(t *testing.T) {
 		t.Fatalf("expected FORMAT_ERROR on fingerprint mismatch in trust store, got %s (msg: %s)", res.Status, res.Message)
 	}
 
-	// 2. Duplicate keyid in trust store
+	// Duplicate keyid in trust store
 	dupTrustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]},{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]}]}`,
 		signer.fingerprint, escapePEM(signer.pubPEM), signer.fingerprint, escapePEM(signer.pubPEM),
