@@ -236,6 +236,7 @@ Commands:
   sign           Sign a release artifact and create a bundle
   verify         Verify an artifact against a release bundle and trust store
   trust          Manage trusted keys in the trust store
+  sbom           Generate, sign, and verify an SBOM bound to a release artifact
 
 Global Flags:
   -h, --help     Show this help message
@@ -347,6 +348,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runVerify(args[1:], stdout, stderr)
 	case "trust":
 		return runTrust(args[1:], stdout, stderr)
+	case "sbom":
+		return runSBOM(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n\n%s", args[0], rootUsage)
 		return 2
