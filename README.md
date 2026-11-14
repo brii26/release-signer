@@ -1,5 +1,5 @@
 <div align="center">
-   <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&height=260&color=0:1F6FEB,100:0B2A5B&text=release-signer&fontColor=FFFFFF&fontSize=62&desc=IF4020%20Kriptografi%20Tugas%203&descAlignY=76&descSize=17&descColor=C9D8F5" />
+   <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&height=260&color=0:1F6FEB,100:0B2A5B&text=release-signer&fontColor=FFFFFF&fontSize=62&desc=IF4020%20Cryptography%20Assignment%203&descAlignY=76&descSize=17&descColor=C9D8F5" />
 </div>
 
 <div align="center">
@@ -13,24 +13,24 @@
 
 ---
 
-## Nama dan Deskripsi
+## About
 
-`release-signer` adalah CLI untuk menandatangani dan memverifikasi software release. Artefak dideskripsikan oleh release manifest dalam canonical JSON, manifest dan signature dibungkus dalam satu bundle Base64, dan verifikasi memakai trust store lokal milik penerima. Tiga profil algoritma didukung: `rsa-pss-sha256`, `ecdsa-p256-sha256`, dan `ed25519`.
+`release-signer` is a CLI for signing and verifying software releases. An artifact is described by a release manifest in canonical JSON, the manifest and its signature are wrapped in one Base64 bundle, and verification uses a local trust store owned by the recipient. Three algorithm profiles are supported: `rsa-pss-sha256`, `ecdsa-p256-sha256`, and `ed25519`.
 
-Tanda tangan hanya membuktikan keaslian dan integritas artefak. Ini bukan jaminan software bebas malware atau kerentanan.
+A signature only proves authenticity and integrity of the artifact. It does not guarantee that the software is free of malware or vulnerabilities.
 
-Fitur utama:
+Main features:
 
-- **Sign dan verify**
-  Manifest memuat paket, versi, algoritma, keyid, serta nama, ukuran, dan SHA-256 artefak. Verify berhenti di kegagalan pertama dengan status dan exit code yang tetap.
+- **Sign and verify**
+  The manifest records the package, version, algorithm, keyid, and the name, size, and SHA-256 of the artifact. Verify stops at the first failure with a fixed status and exit code.
 - **Trust store**
-  Kunci publik dipercaya per paket lewat `trust add`. Bundle tidak membawa public key dan `verify` tidak pernah menulis trust store.
-- **Container dan pipeline**
-  Image berbasis distroless dijalankan di runner CI/CD dengan referensi digest `sha256`, tanpa network dan tanpa TTY.
+  A public key is trusted per package through `trust add`. The bundle never carries a public key, and `verify` never writes the trust store.
+- **Container and pipeline**
+  A distroless image runs on CI/CD runners, referenced by `sha256` digest, with no network and no TTY.
 - **Signed SBOM (bonus)**
-  SBOM CycloneDX ditandatangani sebagai artefak terpisah dan diikat ke SHA-256 artefak rilis.
+  A CycloneDX SBOM is signed as a separate artifact and bound to the SHA-256 of the release artifact.
 - **API documentation (bonus)**
-  Referensi modul Go dan CLI di-host di GitHub Pages: https://brii26.github.io/release-signer/
+  Go module and CLI reference hosted on GitHub Pages: https://brii26.github.io/release-signer/
 
 ---
 
@@ -38,90 +38,90 @@ Fitur utama:
 
 | Layer | Technology |
 |:---|:---|
-| Bahasa | Go 1.27 |
-| Kriptografi | `crypto/rsa`, `crypto/ecdsa`, `crypto/ed25519`, `crypto/sha256` (standard library) |
-| Encoding | `encoding/base64`, parser JSON strict buatan sendiri (`pkg/strictjson`) |
+| Language | Go 1.27 |
+| Cryptography | `crypto/rsa`, `crypto/ecdsa`, `crypto/ed25519`, `crypto/sha256` (standard library) |
+| Encoding | `encoding/base64`, custom strict JSON parser (`pkg/strictjson`) |
 | Container | Docker, base image `distroless/static-debian12:nonroot` |
 | Registry | GitHub Container Registry (GHCR) |
 | CI/CD | GitHub Actions |
 | SBOM | CycloneDX 1.6 (JSON) |
 | API docs | gomarkdoc v1.1.0, MkDocs Material 9.5.50, GitHub Pages |
-| Test interop | OpenSSL 3, Python 3 dengan `cryptography==50.0.2`, uv |
+| Interop tests | OpenSSL 3, Python 3 with `cryptography==50.0.2`, uv |
 
-## Dependensi
+## Dependencies
 
-| Komponen | Versi | Dipakai untuk | Dokumentasi |
+| Component | Version | Used for | Documentation |
 |:---|:---|:---|:---|
-| Go standard library | 1.27 | Seluruh program. `go.mod` tidak punya dependensi pihak ketiga. | https://pkg.go.dev/std |
-| golang (base image build) | `alpine` dipin digest | Build stage `Dockerfile` | https://hub.docker.com/_/golang |
-| distroless static | `debian12:nonroot` dipin digest | Runtime image | https://github.com/GoogleContainerTools/distroless |
-| gomarkdoc | v1.1.0 | Referensi API (hanya dokumentasi) | https://github.com/princjef/gomarkdoc |
-| MkDocs Material | 9.5.50 | Situs dokumentasi (hanya dokumentasi) | https://squidfunnel.github.io/mkdocs-material/ |
-| OpenSSL | 3.x | Pengujian interoperabilitas saja | https://docs.openssl.org/3.0/ |
-| Python `cryptography` | 50.0.2 | Pengujian interoperabilitas saja | https://cryptography.io/en/latest/ |
+| Go standard library | 1.27 | The whole program. `go.mod` has no third-party dependency. | https://pkg.go.dev/std |
+| golang (build base image) | `alpine`, pinned by digest | Build stage of the `Dockerfile` | https://hub.docker.com/_/golang |
+| distroless static | `debian12:nonroot`, pinned by digest | Runtime image | https://github.com/GoogleContainerTools/distroless |
+| gomarkdoc | v1.1.0 | API reference (documentation only) | https://github.com/princjef/gomarkdoc |
+| MkDocs Material | 9.5.50 | Documentation site (documentation only) | https://squidfunnel.github.io/mkdocs-material/ |
+| OpenSSL | 3.x | Interoperability tests only | https://docs.openssl.org/3.0/ |
+| Python `cryptography` | 50.0.2 | Interoperability tests only | https://cryptography.io/en/latest/ |
 
-Program yang dijalankan tidak memerlukan dependensi runtime apa pun selain binary itu sendiri.
+The program has no runtime dependency other than the binary itself.
 
 ---
 
-## Pemetaan Profil ke API Pustaka
+## Profile to Library API Mapping
 
-| Profil | Hash | Signature | API Go | Bentuk signature |
+| Profile | Hash | Signature | Go API | Signature size |
 |:---|:---|:---|:---|:---|
-| `rsa-pss-sha256` | SHA-256 atas byte manifest | RSASSA-PSS, MGF1-SHA-256, salt 32 byte | `rsa.SignPSS`, `rsa.VerifyPSS` dengan `rsa.PSSOptions{SaltLength: 32}` | 384 byte (RSA 3072 bit, e = 65537) |
-| `ecdsa-p256-sha256` | SHA-256 atas byte manifest | ECDSA P-256 | `ecdsa.Sign`, `ecdsa.Verify` | 64 byte, `r \|\| s` masing-masing 32 byte big-endian |
-| `ed25519` | tanpa prehash | Ed25519 murni (RFC 8032), bukan Ed25519ph | `ed25519.Sign`, `ed25519.Verify` | 64 byte |
+| `rsa-pss-sha256` | SHA-256 over the manifest bytes | RSASSA-PSS, MGF1-SHA-256, 32 byte salt | `rsa.SignPSS`, `rsa.VerifyPSS` with `rsa.PSSOptions{SaltLength: 32}` | 384 bytes (RSA 3072 bit, e = 65537) |
+| `ecdsa-p256-sha256` | SHA-256 over the manifest bytes | ECDSA P-256 | `ecdsa.Sign`, `ecdsa.Verify` | 64 bytes, `r \|\| s` with 32 byte big-endian each |
+| `ed25519` | none (no prehash) | Pure Ed25519 (RFC 8032), not Ed25519ph | `ed25519.Sign`, `ed25519.Verify` | 64 bytes |
 
-Format kunci: private key PKCS#8 PEM (`PRIVATE KEY`, mode `0600`), public key SubjectPublicKeyInfo PEM (`PUBLIC KEY`). keyid adalah `hex_lower(SHA256(DER SPKI))`.
+Key format: private key is PKCS#8 PEM (`PRIVATE KEY`, mode `0600`), public key is SubjectPublicKeyInfo PEM (`PUBLIC KEY`). The keyid is `hex_lower(SHA256(DER SPKI))`.
 
-## Format Berkas
+## File Formats
 
-Ringkasan, detail lengkap ada di [`docs/formats.md`](docs/formats.md).
+Summary only, see [`docs/formats.md`](docs/formats.md) for the full specification.
 
-| Berkas | Schema | Batas | Isi |
+| File | Schema | Limit | Content |
 |:---|:---|:---|:---|
-| Release manifest | `minisign-manifest/v1` | 16 KiB | `package`, `version`, `algorithm`, `keyid`, `artifact{name,size,sha256}`. Canonical: tanpa spasi, urutan field tetap. |
-| Bundle | `minisign-bundle/v1` | 64 KiB | `manifest_b64`, `signature_b64` (Base64 RFC 4648 ketat). |
-| Trust store | `minisign-trust/v1` | | `keys[]` berisi `keyid`, `algorithm`, `public_key_pem`, `packages`. |
-| SBOM | CycloneDX 1.6 | 1 MiB | Hash SHA-256 artefak di `metadata.component.hashes`. Lihat [`docs/sbom.md`](docs/sbom.md). |
+| Release manifest | `minisign-manifest/v1` | 16 KiB | `package`, `version`, `algorithm`, `keyid`, `artifact{name,size,sha256}`. Canonical: no whitespace, fixed field order. |
+| Bundle | `minisign-bundle/v1` | 64 KiB | `manifest_b64`, `signature_b64` (strict Base64 per RFC 4648). |
+| Trust store | `minisign-trust/v1` | | `keys[]` with `keyid`, `algorithm`, `public_key_pem`, `packages`. |
+| SBOM | CycloneDX 1.6 | 1 MiB | Artifact SHA-256 in `metadata.component.hashes`. See [`docs/sbom.md`](docs/sbom.md). |
 
-Parser menolak field duplikat, field tambahan, `null`, dan tipe yang salah.
+Parsers reject duplicate fields, extra fields, `null`, and wrong types.
 
 ---
 
-## Subcommand
+## Subcommands
 
-Semua perintah non-interaktif. Referensi parameter: [`docs/cli.md`](docs/cli.md). Status dan exit code: [`docs/status.md`](docs/status.md).
+All commands are non-interactive. Parameter reference: [`docs/cli.md`](docs/cli.md). Status and exit codes: [`docs/status.md`](docs/status.md).
 
 ```sh
-# 1. membuat pasangan kunci
+# generate a key pair
 release-signer keygen --algorithm ed25519 --out keys/publisher
 
-# 2. mempercayai public key untuk satu paket
+# trust a public key for one package
 release-signer trust add --key keys/publisher.pub.pem --package demo-app --store trust.json
 release-signer trust list --store trust.json
 release-signer trust remove --keyid <64 hex> --store trust.json
 
-# 3. menandatangani
+# sign
 release-signer sign --file demo-app.tar.gz --package demo-app --version 1.0.0 \
   --key keys/publisher.key.pem --out release.json
 
-# 4. memverifikasi
+# verify
 release-signer verify --file demo-app.tar.gz --bundle release.json \
   --trust-store trust.json --package demo-app --version 1.0.0 --json
 ```
 
-Keluaran `verify --json`:
+Output of `verify --json`:
 
 ```json
 {"valid":true,"status":"OK","message":"...","algorithm":"ed25519","keyid":"<64 hex>","package":"demo-app","version":"1.0.0"}
 ```
 
-| Exit code | Arti |
+| Exit code | Meaning |
 |:---:|:---|
 | 0 | `OK` |
-| 1 | Verifikasi ditolak (`FORMAT_ERROR`, `UNSUPPORTED_ALGORITHM`, `KEY_NOT_TRUSTED`, `INVALID_SIGNATURE`, `METADATA_MISMATCH`, `ARTIFACT_MISMATCH`, `SBOM_MISMATCH`) |
-| 2 | Kesalahan pemakaian, I/O, atau lingkungan (`INPUT_ERROR`) |
+| 1 | Verify rejected (`FORMAT_ERROR`, `UNSUPPORTED_ALGORITHM`, `KEY_NOT_TRUSTED`, `INVALID_SIGNATURE`, `METADATA_MISMATCH`, `ARTIFACT_MISMATCH`, `SBOM_MISMATCH`) |
+| 2 | Usage, I/O, or environment error (`INPUT_ERROR`) |
 
 Signed SBOM (bonus):
 
@@ -138,26 +138,26 @@ release-signer sbom check --file demo-app.tar.gz --bundle release.json \
 
 ---
 
-## Menjalankan di Runner CI/CD
+## Running on a CI/CD Runner
 
-### Mengambil image
+### Pulling the image
 
-Image dikunci dengan digest, bukan tag `latest`. Nilai terkini ada di [`ci/image.env`](ci/image.env).
+The image is pinned by digest, never by the `latest` tag. The current value is in [`ci/image.env`](ci/image.env).
 
 ```sh
 . ./ci/image.env
 docker pull "$IMAGE"
 ```
 
-| Versi program | Tag repositori | Image | Digest |
+| Program version | Repository tag | Image | Digest |
 |:---|:---|:---|:---|
-| 1.0.0 | `v1.0.0` (dibuat saat rilis) | `ghcr.io/brii26/release-signer` | `sha256:0853d9e4bbca739361262b45623d6be1e6cc977bb4001b49f27f2f611e8d2c07` (pin saat ini, diperbarui pada verifikasi akhir) |
+| 1.0.0 | `v1.0.0` (created at release) | `ghcr.io/brii26/release-signer` | `sha256:0853d9e4bbca739361262b45623d6be1e6cc977bb4001b49f27f2f611e8d2c07` (current pin, updated at final verification) |
 
-Image dibangun dari `Dockerfile` pada commit yang diberi tag, oleh workflow [`publish-image.yml`](.github/workflows/publish-image.yml) setiap tag `v*` di-push.
+The image is built from the `Dockerfile` at the tagged commit by the [`publish-image.yml`](.github/workflows/publish-image.yml) workflow whenever a `v*` tag is pushed.
 
-### Memakai di workflow
+### Using it in a workflow
 
-Workflow pemakai ada di [`.github/workflows/release-pipeline.yml`](.github/workflows/release-pipeline.yml) dengan job `prepare`, `sign`, `verify`, dan `deploy`. Deploy hanya jalan kalau verify lolos.
+The user workflow is [`.github/workflows/release-pipeline.yml`](.github/workflows/release-pipeline.yml), with the jobs `prepare`, `sign`, `verify`, and `deploy`. Deploy only runs when verify passes.
 
 ```sh
 docker run --rm --network none --user "$(id -u):$(id -g)" \
@@ -166,92 +166,92 @@ docker run --rm --network none --user "$(id -u):$(id -g)" \
   --key /key.pem --out /output/release.json </dev/null
 ```
 
-Aturan yang dipakai pipeline:
+Pipeline rules:
 
-- Private key hanya lewat GitHub Secret (`SIGNING_KEY_*`), ditulis ke file sementara di `RUNNER_TEMP` dan dihapus lewat `trap`.
-- Job `verify` dan `deploy` tidak punya akses ke secret penandatanganan.
-- Trust store diambil dari repositori ([`ci/trust.json`](ci/trust.json)), bukan dari bundle.
-- `keygen` dan `trust add` tidak dijalankan otomatis di pipeline rilis.
-- Hasil verify dinilai dari exit code, tidak ada `|| true` atau `continue-on-error`.
+- The private key comes only from a GitHub Secret (`SIGNING_KEY_*`), is written to a temporary file under `RUNNER_TEMP`, and is removed by a `trap`.
+- The `verify` and `deploy` jobs have no access to the signing secrets.
+- The trust store comes from the repository ([`ci/trust.json`](ci/trust.json)), not from the bundle.
+- `keygen` and `trust add` never run automatically in the release pipeline.
+- The verify result is judged by its exit code. There is no `|| true` or `continue-on-error`.
 
-### Bukti uji integrasi
+### Integration test evidence
 
-Skenario C01 sampai C05 dijalankan oleh [`ci-integration.yml`](.github/workflows/ci-integration.yml). Konfigurasi, log tersanitasi, keluaran JSON, bukti marker deploy, dan tautan workflow run ada di [`results/ci/README.md`](results/ci/README.md).
+Scenarios C01 to C05 are run by [`ci-integration.yml`](.github/workflows/ci-integration.yml). The configuration, sanitized logs, JSON output, deploy marker evidence, and workflow run links are in [`results/ci/README.md`](results/ci/README.md).
 
 ---
 
-## Menjalankan di Luar Runner CI/CD
+## Running Outside a CI/CD Runner
 
-Prasyarat: Go 1.27.
+Prerequisite: Go 1.27.
 
 ```sh
 git clone https://github.com/brii26/release-signer.git
 cd release-signer
-make build                      # menghasilkan bin/release-signer
+make build                      # produces bin/release-signer
 ./bin/release-signer --version
 ```
 
-Atau lewat container:
+Or through a container:
 
 ```sh
 make docker VERSION=1.0.0
 docker run --rm release-signer:1.0.0 --help
 ```
 
-Contoh alur lokal lengkap ada di bagian [Subcommand](#subcommand).
+A complete local flow is shown in [Subcommands](#subcommands).
 
 ---
 
-## Mengulang Pengujian
+## Repeating the Tests
 
-| Perintah | Isi | Hasil |
+| Command | Content | Result |
 |:---|:---|:---|
-| `make test` | Unit test seluruh package (`go test -race ./...`) | stdout |
-| `make vet` dan `make fmt-check` | Pemeriksaan statis dan format | stdout |
-| `make scenarios` | Skenario U01 sampai U14 dan kasus negatif untuk tiga profil | [`results/scenarios/`](results/scenarios/results.md) |
-| `make sbom-test` | Skenario S01 sampai S09 untuk signed SBOM | [`results/sbom/`](results/sbom/results.md) |
-| `make interop` | Interoperabilitas dengan OpenSSL dan Python (perlu OpenSSL, uv) | [`results/interop/`](results/interop/results.md) |
-| `make bench` | Benchmark keygen, hash, sign, verify, dan e2e | [`results/bench/`](results/bench/summary.md) |
-| `make docs` | Referensi API dan situs MkDocs (perlu `mkdocs`) | `site/` |
+| `make test` | Unit tests for all packages (`go test -race ./...`) | stdout |
+| `make vet` and `make fmt-check` | Static analysis and formatting | stdout |
+| `make scenarios` | Scenarios U01 to U14 and negative cases for the three profiles | [`results/scenarios/`](results/scenarios/results.md) |
+| `make sbom-test` | Scenarios S01 to S09 for the signed SBOM | [`results/sbom/`](results/sbom/results.md) |
+| `make interop` | Interoperability with OpenSSL and Python (needs OpenSSL, uv) | [`results/interop/`](results/interop/results.md) |
+| `make bench` | Benchmark of keygen, hash, sign, verify, and e2e | [`results/bench/`](results/bench/summary.md) |
+| `make docs` | API reference and MkDocs site (needs `mkdocs`) | `site/` |
 
-Skenario C01 sampai C05 dijalankan lewat GitHub Actions (`ci-integration`), bukan di mesin lokal.
+Scenarios C01 to C05 run through GitHub Actions (`ci-integration`), not on a local machine.
 
-Pasangan kunci khusus pengujian ada di [`test/keys/`](test/keys/README.md) dan [`ci/keys/`](ci/keys/). Kunci ini hanya untuk uji dan tidak boleh dipakai untuk layanan nyata. Fixture teks, biner, dan berkas kosong ada di [`test/fixtures/`](test/fixtures/).
+Key pairs dedicated to testing are in [`test/keys/`](test/keys/README.md) and [`ci/keys/`](ci/keys/). They are for tests only and must never be used for real services. Text, binary, and empty file fixtures are in [`test/fixtures/`](test/fixtures/).
 
 ---
 
-## Struktur Proyek
+## Project Structure
 
 ```
 release-signer/
 ├── cmd/release-signer/   entry point
-├── internal/cli/         parsing argumen dan subcommand
+├── internal/cli/         argument parsing and subcommands
 ├── pkg/
-│   ├── profile/          nama profil dan panjang signature
+│   ├── profile/          profile names and signature lengths
 │   ├── keys/             keygen, PEM, keyid
-│   ├── sigalg/           sign dan verify per profil
-│   ├── strictjson/       parser JSON strict
-│   ├── b64/              Base64 ketat
-│   ├── manifest/         release manifest canonical
-│   ├── bundle/           bundle JSON
+│   ├── sigalg/           sign and verify per profile
+│   ├── strictjson/       strict JSON parser
+│   ├── b64/              strict Base64
+│   ├── manifest/         canonical release manifest
+│   ├── bundle/           JSON bundle
 │   ├── truststore/       trust store
-│   ├── release/          alur sign, verify, SBOM check
-│   └── sbom/             SBOM CycloneDX
+│   ├── release/          sign, verify, and SBOM check flow
+│   └── sbom/             CycloneDX SBOM
 ├── test/                 e2e, interop, sbom, fixtures, keys
 ├── bench/                benchmark
-├── results/              hasil uji (scenarios, interop, bench, ci, sbom)
-├── ci/                   image.env, release.env, trust.json, kunci publik uji
-├── docs/                 dokumentasi API dan keamanan (sumber MkDocs)
-├── doc/                  laporan PDF
+├── results/              test results (scenarios, interop, bench, ci, sbom)
+├── ci/                   image.env, release.env, trust.json, test public keys
+├── docs/                 API and security documentation (MkDocs source)
+├── doc/                  PDF report
 ├── .github/workflows/    test, publish-image, release-pipeline, ci-integration, docs
 └── Dockerfile
 ```
 
-## Dokumentasi
+## Documentation
 
 - API docs: https://brii26.github.io/release-signer/
-- Analisis keamanan dan threat model: [`docs/security.md`](docs/security.md)
-- Laporan PDF: lihat folder [`doc/`](doc/)
+- Security analysis and threat model: [`docs/security.md`](docs/security.md)
+- PDF report: see the [`doc/`](doc/) folder
 
 ---
 
