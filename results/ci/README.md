@@ -1,7 +1,7 @@
 # Integration Test and CI/CD Pipeline Results (Section 2.9)
 
 ## Pinned Image Reference
-- **Registry image:** `ghcr.io/brii26/release-signer@sha256:0853d9e4bbca739361262b45623d6be1e6cc977bb4001b49f27f2f611e8d2c07`
+- **Registry image:** `ghcr.io/brii26/release-signer@sha256:6bf0609bd7d5692361e16a3c8658826489cdd8eed04d07c43167969e742ee612`
 - **Pinning configuration:** [`ci/image.env`](../../ci/image.env)
 - **Demo release metadata:** [`ci/release.env`](../../ci/release.env) (`PACKAGE=demo-app`, `VERSION=1.0.0`)
 - **CI trust store:** [`ci/trust.json`](../../ci/trust.json) (3 demo public key profiles from [`ci/keys/`](../../ci/keys/))

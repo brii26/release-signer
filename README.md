@@ -151,7 +151,7 @@ docker pull "$IMAGE"
 
 | Program version | Repository tag | Image | Digest |
 |:---|:---|:---|:---|
-| 1.0.0 | `v1.0.0` (created at release) | `ghcr.io/brii26/release-signer` | `sha256:0853d9e4bbca739361262b45623d6be1e6cc977bb4001b49f27f2f611e8d2c07` (current pin, updated at final verification) |
+| 1.0.0 | `v1.0.0` | `ghcr.io/brii26/release-signer:1.0.0` | `sha256:6bf0609bd7d5692361e16a3c8658826489cdd8eed04d07c43167969e742ee612` (digest of the `v1.0.0` image) |
 
 The image is built from the `Dockerfile` at the tagged commit by the [`publish-image.yml`](.github/workflows/publish-image.yml) workflow whenever a `v*` tag is pushed.
 
