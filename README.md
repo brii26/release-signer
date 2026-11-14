@@ -241,8 +241,7 @@ release-signer/
 ├── bench/                benchmark
 ├── results/              test results (scenarios, interop, bench, ci, sbom)
 ├── ci/                   image.env, release.env, trust.json, test public keys
-├── docs/                 API and security documentation (MkDocs source)
-├── doc/                  PDF report
+├── docs/                 API and security documentation (MkDocs source) and the PDF report
 ├── .github/workflows/    test, publish-image, release-pipeline, ci-integration, docs
 └── Dockerfile
 ```
@@ -251,7 +250,7 @@ release-signer/
 
 - API docs: https://brii26.github.io/release-signer/
 - Security analysis and threat model: [`docs/security.md`](docs/security.md)
-- PDF report: see the [`doc/`](doc/) folder
+- PDF report: [`docs/13523126_13523061_13523147_Tugas3_IF4020.pdf`](docs/13523126_13523061_13523147_Tugas3_IF4020.pdf)
 
 ---
 
