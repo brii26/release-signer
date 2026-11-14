@@ -118,7 +118,7 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull "$IMAGE"
 
-      - name: Sign artifact inside isolated container
+      - name: Sign artifact and generate/sign SBOM inside isolated container
         env:
           PROFILE: ${{ matrix.profile }}
           KEY_RSA: ${{ secrets.SIGNING_KEY_RSA_PSS_SHA256 }}
@@ -162,7 +162,28 @@ jobs:
             --out "/output/demo-app-${PROFILE}.bundle.json" \
             </dev/null
 
-      - name: Upload artifact and signed bundle pair
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            "$IMAGE" sbom generate \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --out /output/demo-app.cdx.json \
+            </dev/null
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sbom sign \
+            --sbom /output/demo-app.cdx.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out "/output/demo-app-${PROFILE}.sbom.bundle.json" \
+            </dev/null
+
+      - name: Upload artifact, SBOM, and signed bundles
         uses: actions/upload-artifact@v4
         with:
           name: signed-bundle-${{ matrix.profile }}
@@ -170,6 +191,8 @@ jobs:
             dist/demo-app.tar.gz
             dist/demo-app.tar.gz.sha256
             out/demo-app-${{ matrix.profile }}.bundle.json
+            out/demo-app.cdx.json
+            out/demo-app-${{ matrix.profile }}.sbom.bundle.json
 
   verify:
     needs: sign
@@ -235,6 +258,27 @@ jobs:
           jq -e --arg prof "$PROFILE" '.valid == true and .status == "OK" and .algorithm == $prof' out/verification.json >/dev/null
           sha256sum dist/demo-app.tar.gz > out/verified-artifact.sha256
 
+      - name: Verify SBOM bundle and release binding against trust store
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -eu
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            -v "$PWD/ci/trust.json:/trust.json:ro" \
+            "$IMAGE" sbom check \
+            --file /input/demo-app.tar.gz \
+            --bundle "/output/demo-app-${PROFILE}.bundle.json" \
+            --sbom /output/demo-app.cdx.json \
+            --sbom-bundle "/output/demo-app-${PROFILE}.sbom.bundle.json" \
+            --trust-store /trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/sbom-verification.json
+          cat out/sbom-verification.json
+          jq -e --arg prof "$PROFILE" '.valid == true and .status == "OK" and .release.algorithm == $prof and .sbom.algorithm == $prof' out/sbom-verification.json >/dev/null
+
       - name: Upload verified release materials
         uses: actions/upload-artifact@v4
         with:
@@ -242,7 +286,10 @@ jobs:
           path: |
             dist/demo-app.tar.gz
             out/demo-app-${{ matrix.profile }}.bundle.json
+            out/demo-app.cdx.json
+            out/demo-app-${{ matrix.profile }}.sbom.bundle.json
             out/verification.json
+            out/sbom-verification.json
             out/verified-artifact.sha256
 
   deploy:
@@ -266,6 +313,7 @@ jobs:
           set -eu
           sha256sum -c out/verified-artifact.sha256
           jq -e '.valid == true and .status == "OK"' out/verification.json >/dev/null
+          jq -e '.valid == true and .status == "OK"' out/sbom-verification.json >/dev/null
           PKG=$(jq -r '.package' out/verification.json)
           VER=$(jq -r '.version' out/verification.json)
           SHA=$(awk '{print $1}' out/verified-artifact.sha256)
@@ -285,5 +333,8 @@ jobs:
           path: |
             dist/demo-app.tar.gz
             out/demo-app-${{ matrix.profile }}.bundle.json
+            out/demo-app.cdx.json
+            out/demo-app-${{ matrix.profile }}.sbom.bundle.json
             out/verification.json
+            out/sbom-verification.json
             out/deployed-${{ matrix.profile }}.marker

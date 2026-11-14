@@ -1,15 +1,15 @@
 # Hasil Uji Integrasi dan Pipeline CI/CD (Bagian 2.9)
 
 ## Referensi Image Terpin
-- **Registry Image:** `ghcr.io/brii26/release-signer@sha256:7f43780464b1b4254f7897ba2c55c5df5878ee433d12e4d75f559af776c044fb`
+- **Registry Image:** `ghcr.io/brii26/release-signer@sha256:0853d9e4bbca739361262b45623d6be1e6cc977bb4001b49f27f2f611e8d2c07`
 - **Konfigurasi Pinning:** [`ci/image.env`](../../ci/image.env)
 - **Metadata Rilis Demo:** [`ci/release.env`](../../ci/release.env) (`PACKAGE=demo-app`, `VERSION=1.0.0`)
 - **Trust Store CI:** [`ci/trust.json`](../../ci/trust.json) (3 profil kunci publik demo dari [`ci/keys/`](../../ci/keys/))
 
 ## Tautan Workflow Run
-- **Publish Container Image (`publish-image.yml`):** https://github.com/brii26/release-signer/actions/runs/43594589506
-- **Release Pipeline (`release-pipeline.yml`):** Menunggu eksekusi pada `main` setelah PR `#15/#16` di-merge (atau pemicu `workflow_dispatch`).
-- **CI Integration Tests C01–C05 (`ci-integration.yml`):** Menunggu eksekusi pada `main` setelah PR `#15/#16` di-merge (atau pemicu `workflow_dispatch`).
+- **Publish Container Image (`publish-image.yml`, dengan SBOM):** https://github.com/brii26/release-signer/actions/runs/43603853444
+- **Release Pipeline (`release-pipeline.yml`, baseline C01–C05):** https://github.com/brii26/release-signer/actions/runs/43601016383
+- **CI Integration Tests C01–C05 (`ci-integration.yml`):** https://github.com/brii26/release-signer/actions/runs/43601016404
 
 ## Ringkasan Skenario C01 sampai C05 (Tabel 2.15)
 Seluruh skenario dijalankan pada container terisolasi (`--network none --user "$(id -u):$(id -g)" </dev/null`) tanpa TTY dan tanpa membangun ulang binary dari source.
