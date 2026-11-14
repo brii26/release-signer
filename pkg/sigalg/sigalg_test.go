@@ -135,7 +135,7 @@ func TestDoubleHashingGuards(t *testing.T) {
 	h := sha256.Sum256(msg)
 	h2 := sha256.Sum256(h[:])
 
-	// 1. RSA double hash check
+	// RSA double hash check
 	rsaKey, err := keys.Generate(profile.RSAPSS)
 	if err != nil {
 		t.Fatal(err)
@@ -156,7 +156,7 @@ func TestDoubleHashingGuards(t *testing.T) {
 		t.Errorf("rsa.VerifyPSS unexpectedly succeeded over double hash h2[:]")
 	}
 
-	// 2. ECDSA double hash check
+	// ECDSA double hash check
 	ecKey, err := keys.Generate(profile.ECDSA)
 	if err != nil {
 		t.Fatal(err)
@@ -209,21 +209,21 @@ func TestECDSABoundaries(t *testing.T) {
 	n := pub.Curve.Params().N
 	msg := []byte("message")
 
-	// Case 1: r = 0
+	// r = 0
 	sigZeroR := make([]byte, 64)
 	new(big.Int).SetInt64(1).FillBytes(sigZeroR[32:]) // s = 1
 	if sigalg.Verify(profile.ECDSA, pub, msg, sigZeroR) {
 		t.Errorf("Verify should reject r = 0")
 	}
 
-	// Case 2: s = 0
+	// s = 0
 	sigZeroS := make([]byte, 64)
 	new(big.Int).SetInt64(1).FillBytes(sigZeroS[:32]) // r = 1
 	if sigalg.Verify(profile.ECDSA, pub, msg, sigZeroS) {
 		t.Errorf("Verify should reject s = 0")
 	}
 
-	// Case 3: r = n
+	// r = n
 	sigNR := make([]byte, 64)
 	n.FillBytes(sigNR[:32])
 	new(big.Int).SetInt64(1).FillBytes(sigNR[32:])
@@ -231,7 +231,7 @@ func TestECDSABoundaries(t *testing.T) {
 		t.Errorf("Verify should reject r = n")
 	}
 
-	// Case 4: s = n
+	// s = n
 	sigNS := make([]byte, 64)
 	new(big.Int).SetInt64(1).FillBytes(sigNS[:32])
 	n.FillBytes(sigNS[32:])
@@ -306,7 +306,7 @@ func TestSignatureDeterminismAcrossRuns(t *testing.T) {
 	// Ed25519 is PureEdDSA deterministic -> signatures are identical.
 	msg := []byte("consistent manifest message")
 
-	// 1. RSA-PSS
+	// RSA-PSS
 	rsaKey, err := keys.Generate(profile.RSAPSS)
 	if err != nil {
 		t.Fatal(err)
@@ -320,7 +320,7 @@ func TestSignatureDeterminismAcrossRuns(t *testing.T) {
 		t.Errorf("RSA-PSS verification failed")
 	}
 
-	// 2. ECDSA
+	// ECDSA
 	ecKey, err := keys.Generate(profile.ECDSA)
 	if err != nil {
 		t.Fatal(err)
@@ -334,7 +334,7 @@ func TestSignatureDeterminismAcrossRuns(t *testing.T) {
 		t.Errorf("ECDSA verification failed")
 	}
 
-	// 3. Ed25519
+	// Ed25519
 	edKey, err := keys.Generate(profile.Ed25519)
 	if err != nil {
 		t.Fatal(err)
