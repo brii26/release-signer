@@ -1,0 +1,8 @@
+host_uid=1000
+out/ephemeral.key.pem uid=1000
+out/ephemeral.pub.pem uid=1000
+out/exit_code.txt uid=1000
+out/rilis.json uid=1000
+out/trust.json uid=1000
+out/uid_check.txt uid=1000
+out/verification.json uid=1000

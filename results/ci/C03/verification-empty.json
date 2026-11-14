@@ -1,0 +1,1 @@
+{"valid":false,"status":"KEY_NOT_TRUSTED","message":"keyid c43c2169fc194e77d5755e0204c9e392f176aaf46193d2cc7d7a6dbaa6fa38c5 not found in trust store","algorithm":"ed25519","keyid":"c43c2169fc194e77d5755e0204c9e392f176aaf46193d2cc7d7a6dbaa6fa38c5","package":"demo-app","version":"1.0.0"}

@@ -1,0 +1,1 @@
+{"valid":false,"status":"ARTIFACT_MISMATCH","message":"artifact sha256 bf91c1e570a038f35f8de7affa5a6ee2399d2288084ffe74639ec45795399cd6 does not match manifest 479e30c75870be296de787b3bafe5e7f0c812b6d1c18a693c1f52547dd0de4a2","algorithm":"ed25519","keyid":"c43c2169fc194e77d5755e0204c9e392f176aaf46193d2cc7d7a6dbaa6fa38c5","package":"demo-app","version":"1.0.0"}
