@@ -34,7 +34,7 @@ jobs:
       - name: Install MkDocs Material
         run: pip install mkdocs-material==9.5.50
       - name: Regenerate Go API reference
-        run: go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0 --output 'docs/api/{{.Dir}}.md' ./pkg/...
+        run: go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0 --repository.url https://github.com/brii26/release-signer --repository.default-branch main --repository.path / --output 'docs/api/{{.Dir}}.md' ./pkg/...
       - name: Fail if the committed API reference is stale
         run: git diff --exit-code -- docs/api
       - name: Build site
