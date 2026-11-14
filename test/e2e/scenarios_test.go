@@ -332,8 +332,8 @@ func writeResults(dir string) {
 
 	mdPath := filepath.Join(dir, "results.md")
 	var md strings.Builder
-	md.WriteString("# Skenario Uji U01 sampai U14 (Tabel 2.11)\n\n")
-	md.WriteString("| ID | Profil | Input / Cara | Expected Status | Expected Exit | Actual Status | Actual Exit | Result |\n")
+	md.WriteString("# Test Scenarios U01 to U14 (Table 2.11)\n\n")
+	md.WriteString("| ID | Profile | Input / Method | Expected Status | Expected Exit | Actual Status | Actual Exit | Result |\n")
 	md.WriteString("|:---|:---|:---|:---|:---:|:---|:---:|:---:|\n")
 
 	passCount := 0
@@ -361,10 +361,10 @@ func writeResults(dir string) {
 		len(records), passCount, failCount, skipCount))
 
 	if len(u14Records) > 0 {
-		md.WriteString("\n## Analisis Skenario U14: Randomness dan Determinisme Signature\n\n")
+		md.WriteString("\n## U14 Analysis: Signature Randomness and Determinism\n\n")
 		for _, u := range u14Records {
-			md.WriteString(fmt.Sprintf("### Profil: `%s`\n", u.Profile))
-			md.WriteString(fmt.Sprintf("- **Analisis:** %s\n", u.Details))
+			md.WriteString(fmt.Sprintf("### Profile: `%s`\n", u.Profile))
+			md.WriteString(fmt.Sprintf("- **Analysis:** %s\n", u.Details))
 			md.WriteString(fmt.Sprintf("- **Run 1 Signature (Hex):** `%s`\n", u.Run1SigHex))
 			md.WriteString(fmt.Sprintf("- **Run 2 Signature (Hex):** `%s`\n\n", u.Run2SigHex))
 		}
@@ -375,7 +375,7 @@ func writeResults(dir string) {
 
 func TestScenarios(t *testing.T) {
 	// =========================================================================
-	// U01: 3 Profiles x 3 Fixtures
+	// each profile against every fixture
 	// =========================================================================
 	profiles := []string{"rsa-pss-sha256", "ecdsa-p256-sha256", "ed25519"}
 	fixtures := []string{"text.txt", "binary.bin", "empty.bin"}
@@ -428,7 +428,7 @@ func TestScenarios(t *testing.T) {
 	}
 
 	// =========================================================================
-	// U02: ed25519, modify 1 byte of artifact -> ARTIFACT_MISMATCH
+	// ed25519, modify 1 byte of artifact -> ARTIFACT_MISMATCH
 	// =========================================================================
 	t.Run("U02", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -470,7 +470,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U03: ed25519, append 1 byte & truncate 1 byte -> ARTIFACT_MISMATCH
+	// ed25519, append 1 byte & truncate 1 byte -> ARTIFACT_MISMATCH
 	// =========================================================================
 	t.Run("U03", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -512,7 +512,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U04: ed25519, decode manifest, change version, old signature -> INVALID_SIGNATURE
+	// ed25519, decode manifest, change version, old signature -> INVALID_SIGNATURE
 	// =========================================================================
 	t.Run("U04", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -567,7 +567,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U05: ed25519, flip 1 bit in signature -> INVALID_SIGNATURE
+	// ed25519, flip 1 bit in signature -> INVALID_SIGNATURE
 	// =========================================================================
 	t.Run("U05", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -616,7 +616,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U06: ed25519, empty trust store -> KEY_NOT_TRUSTED
+	// ed25519, empty trust store -> KEY_NOT_TRUSTED
 	// =========================================================================
 	t.Run("U06", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -656,7 +656,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U07: ed25519, key scoped to other package -> KEY_NOT_TRUSTED
+	// ed25519, key scoped to other package -> KEY_NOT_TRUSTED
 	// =========================================================================
 	t.Run("U07", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -697,7 +697,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U08: ed25519, CLI --version mismatch -> METADATA_MISMATCH
+	// ed25519, CLI --version mismatch -> METADATA_MISMATCH
 	// =========================================================================
 	t.Run("U08", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -736,7 +736,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U09: ed25519, rename artifact -> METADATA_MISMATCH
+	// ed25519, rename artifact -> METADATA_MISMATCH
 	// =========================================================================
 	t.Run("U09", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -778,7 +778,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U10a-d: FORMAT_ERROR cases
+	// FORMAT_ERROR cases
 	// =========================================================================
 	t.Run("U10a", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -942,7 +942,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U11: ed25519, unsupported algorithm rsa-pkcs1-sha256 -> UNSUPPORTED_ALGORITHM
+	// ed25519, unsupported algorithm rsa-pkcs1-sha256 -> UNSUPPORTED_ALGORITHM
 	// =========================================================================
 	t.Run("U11", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -988,7 +988,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U12: ed25519, sign with other key not in trust store -> KEY_NOT_TRUSTED
+	// ed25519, sign with other key not in trust store -> KEY_NOT_TRUSTED
 	// =========================================================================
 	t.Run("U12", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -1029,7 +1029,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U13: ed25519, reformat bundle JSON with reordered keys -> OK
+	// ed25519, reformat bundle JSON with reordered keys -> OK
 	// =========================================================================
 	t.Run("U13", func(t *testing.T) {
 		tmp := t.TempDir()
@@ -1078,7 +1078,7 @@ func TestScenarios(t *testing.T) {
 	})
 
 	// =========================================================================
-	// U14: 3 profiles, sign identical manifest twice -> randomness properties
+	// every profile, sign identical manifest twice -> randomness properties
 	// =========================================================================
 	for _, prof := range profiles {
 		testID := fmt.Sprintf("U14-%s", prof)

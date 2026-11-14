@@ -1,4 +1,4 @@
-# Contoh penggunaan
+# Usage examples
 
 ## CLI
 
@@ -11,23 +11,23 @@ release-signer verify --file demo-app.tar.gz --bundle release.json \
   --trust-store trust.json --package demo-app --version 1.0.0 --json
 ```
 
-Keluaran `verify --json` untuk rilis yang sah:
+Output of `verify --json` for a valid release:
 
 ```json
 {"valid":true,"status":"OK","message":"...","algorithm":"ed25519","keyid":"<64 hex>","package":"demo-app","version":"1.0.0"}
 ```
 
-Satu byte artefak diubah setelah sign:
+One byte of the artifact changed after signing:
 
 ```json
 {"valid":false,"status":"ARTIFACT_MISMATCH","message":"...","algorithm":"ed25519","keyid":"<64 hex>","package":"demo-app","version":"1.0.0"}
 ```
 
-Exit code-nya 1. Untuk berkas yang tidak ada, statusnya `INPUT_ERROR`, exit 2, dan field metadata `null`.
+The exit code is 1. For a file that does not exist, the status is `INPUT_ERROR`, the exit code is 2, and the metadata fields are `null`.
 
-## Modul Go
+## Go modules
 
-Sign lalu verify:
+Sign, then verify:
 
 ```go
 import (
@@ -42,7 +42,7 @@ out, err := release.Sign(release.SignInput{
     OutPath:      "release.json",
 })
 if err != nil {
-    return err // dibungkus release.ErrInput, setara exit code 2
+    return err // wrapped in release.ErrInput, equivalent to exit code 2
 }
 _ = out.KeyID
 
@@ -58,9 +58,9 @@ if res.Status != release.StatusOK {
 }
 ```
 
-Contoh yang bisa dijalankan sebagai test ada di berkas `example_test.go` tiap package (`go test ./pkg/...`) dan tampil di referensi package.
+Runnable examples live in each package's `example_test.go` (`go test ./pkg/...`) and appear in the package reference.
 
-## Parser strict
+## Strict parser
 
 ```go
 _, err := strictjson.Parse([]byte(`{"a":1,"a":2}`), 1024)
@@ -69,4 +69,4 @@ errors.Is(err, strictjson.ErrDuplicateKey) // true
 
 ## Signed SBOM
 
-Lihat bagian Contoh di [Signed SBOM](sbom.md).
+See the Examples section of [Signed SBOM](sbom.md).

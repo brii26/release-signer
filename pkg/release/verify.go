@@ -112,7 +112,7 @@ type trustEntry struct {
 // Verify implements the strict 7-stage verification engine specified in Table 2.8.
 func Verify(in VerifyInput) Result {
 	// =========================================================================
-	// Stage 1: INPUT_ERROR
+	// INPUT_ERROR
 	// Options required, package regex, and input files readable.
 	// =========================================================================
 	if in.ArtifactPath == "" {
@@ -150,7 +150,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 2: FORMAT_ERROR
+	// FORMAT_ERROR
 	// Bundle, manifest, canonical check, and trust store parsing.
 	// =========================================================================
 
@@ -286,7 +286,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 3: UNSUPPORTED_ALGORITHM
+	// UNSUPPORTED_ALGORITHM
 	// Algorithm in manifest must match one of the 3 supported profiles.
 	// =========================================================================
 	if m.algorithm != ProfileRSAPSS && m.algorithm != ProfileECDSA && m.algorithm != ProfileEd25519 {
@@ -294,7 +294,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 4: KEY_NOT_TRUSTED
+	// KEY_NOT_TRUSTED
 	// Keyid in trust store, algorithm matches, package authorized.
 	// =========================================================================
 	var matchedKey *trustEntry
@@ -325,7 +325,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 5: INVALID_SIGNATURE
+	// INVALID_SIGNATURE
 	// Cryptographic verification over raw manifest bytes.
 	// =========================================================================
 	if err := verifySignature(m.algorithm, matchedKey.pubKey, manifestRaw, sigRaw); err != nil {
@@ -333,7 +333,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 6: METADATA_MISMATCH
+	// METADATA_MISMATCH
 	// CLI arguments must match manifest metadata.
 	// =========================================================================
 	if m.packageName != in.Package {
@@ -347,7 +347,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 7: ARTIFACT_MISMATCH
+	// ARTIFACT_MISMATCH
 	// Size and SHA-256 hash must match manifest exactly.
 	// =========================================================================
 	if int64(len(artifactBytes)) != m.artifactSize {
@@ -360,7 +360,7 @@ func Verify(in VerifyInput) Result {
 	}
 
 	// =========================================================================
-	// Stage 8: OK
+	// OK
 	// All checks passed successfully.
 	// =========================================================================
 	return Result{
