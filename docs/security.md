@@ -98,7 +98,7 @@ ulang dengan byte asli.
 | T10 | ECDSA dengan r atau s di luar domain | Verifier crash atau menerima nilai ilegal | r, s dicek rentangnya, hasilnya `INVALID_SIGNATURE` | `TestVerifyECDSARZero`, `TestECDSABoundaries` |
 | T11 | Trust store rusak saat gagal tulis | Kepercayaan hilang atau korup | Tulis ke temp file lalu rename | `TestSaveFailurePreservesStore` |
 | T12 | Private key bocor | Penyerang menerbitkan rilis sah | Lihat bagian 5.1 | `TestWriteKeyPair`, `TestSignRejectsUnsupportedKeys` |
-| T13 | Image program diganti | Tool penandatangan atau verifikasi dimanipulasi | Pin image lewat digest | **Belum**, lihat bagian 6 |
+| T13 | Image program diganti | Tool penandatangan atau verifikasi dimanipulasi | Pin image lewat digest | `ci/image.env`, `release-pipeline.yml`, `ci-integration.yml` |
 | T14 | Rollback ke rilis lama yang sah | Penerima memasang versi rentan | Sebagian, lihat bagian 5.5 | `TestVerifyMetadataMismatch` (hanya jika versi dipin) |
 
 ## 5. Pembahasan wajib
@@ -115,8 +115,8 @@ ulang dengan byte asli.
 - Image dibangun tanpa kunci. `.dockerignore` mengecualikan `*.pem`, `*.key`, dan
   `test/keys/`, dan image akhir memakai `distroless/static:nonroot` hanya dengan satu binary.
   Bukti: `Dockerfile` dan `.dockerignore`.
-- Verify tidak menerima private key sama sekali. Tahap verify di pipeline tidak
-  diberi secret (**Belum**, menunggu workflow di #15).
+- Verify tidak menerima private key sama sekali. Job `verify` dan `deploy` di
+  `.github/workflows/release-pipeline.yml` berjalan tanpa akses ke secret penandatanganan.
 
 ### 5.2 Reuse nonce ECDSA
 
@@ -199,16 +199,16 @@ Tiga hal itu di luar cakupan tugas dan tidak diimplementasikan.
 - Keamanan bergantung pada penerima yang memeriksa fingerprint sebelum `trust add`.
 - Kompromi runner atau host penerima di luar cakupan.
 
-**Belum terbukti, menunggu issue lain**
+**Status pembuktian antar-issue**
 
 | Hal | Status | Issue |
 |---|---|---|
-| Image dikunci lewat digest | `ci/image.env` masih memakai tag `latest`, belum digest | #14, #22 |
-| Verify tanpa akses secret dan deploy bergantung verify | Workflow pemakai belum ada | #15 |
-| Jalan dengan `--network none`, `--user`, tanpa TTY | Belum diuji di container | #16 (C05) |
-| Skenario C01 sampai C05 | Belum dijalankan | #16 |
+| Image dikunci lewat digest | Sudah (`ci/image.env` memakai `@sha256:...`; digest final `v1.0.0` dan uji pull publik dipin ulang sebelum rilis) | #14, #22 |
+| Verify tanpa akses secret dan deploy bergantung verify | Sudah (`.github/workflows/release-pipeline.yml`) | #15 |
+| Jalan dengan `--network none`, `--user`, tanpa TTY | Sudah diuji pada container terisolasi (`results/ci/C05/`) | #16 (C05) |
+| Skenario C01 sampai C05 | Sudah diuji lokal + workflow `.github/workflows/ci-integration.yml` (`results/ci/`) | #16 |
 | Signed SBOM (S01 sampai S05) | Belum diimplementasikan | #18 |
-| Interoperabilitas dengan OpenSSL dan Python | Belum dijalankan | #13 |
+| Interoperabilitas dengan OpenSSL dan Python | Sudah (`results/interop/results.md`) | #13 |
 
 ## 7. Pemetaan ke skenario uji
 
@@ -225,5 +225,5 @@ Tiga hal itu di luar cakupan tugas dan tidak diimplementasikan.
 | U12 | Key lain, tidak ada di trust store | T3 |
 | U13 | Bundle di-reformat tetap diterima | T7 (bundle bebas format) |
 | U14 | Signature berulang berbeda atau identik sesuai algoritma | 5.2 |
-| C01 sampai C05 | Integrasi CI/CD | T13, 5.1 (**Belum**, #16) |
+| C01 sampai C05 | Integrasi CI/CD | T13, 5.1 (`.github/workflows/ci-integration.yml`, `results/ci/`) |
 | S01 sampai S05 | Signed SBOM | (**Belum**, #18) |

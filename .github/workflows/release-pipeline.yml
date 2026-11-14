@@ -1,0 +1,289 @@
+name: release-pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load pinned image and release metadata
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *)
+              echo "error: IMAGE must be pinned by @sha256 digest (got: $IMAGE)" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR and pull pinned image
+        run: |
+          set -eu
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Build deterministic release artifact
+        run: |
+          set -eu
+          rm -rf build dist
+          mkdir -p build/demo-app dist
+          cat > build/demo-app/README.txt <<EOF
+          package=${PACKAGE}
+          version=${VERSION}
+          EOF
+          cat > build/demo-app/run.sh <<'EOF'
+          #!/bin/sh
+          echo "demo-app running"
+          EOF
+          chmod 0755 build/demo-app/run.sh
+          chmod 0644 build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+          sha256sum dist/demo-app.tar.gz > dist/demo-app.tar.gz.sha256
+          cat dist/demo-app.tar.gz.sha256
+
+      - name: Upload deterministic artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifact
+          path: |
+            dist/demo-app.tar.gz
+            dist/demo-app.tar.gz.sha256
+
+  sign:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [rsa-pss-sha256, ecdsa-p256-sha256, ed25519]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download deterministic artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifact
+          path: dist
+
+      - name: Verify downloaded artifact checksum
+        run: |
+          set -eu
+          sha256sum -c dist/demo-app.tar.gz.sha256
+
+      - name: Load pinned image and release metadata
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *)
+              echo "error: IMAGE must be pinned by @sha256 digest" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR and pull pinned image
+        run: |
+          set -eu
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Sign artifact inside isolated container
+        env:
+          PROFILE: ${{ matrix.profile }}
+          KEY_RSA: ${{ secrets.SIGNING_KEY_RSA_PSS_SHA256 }}
+          KEY_ECDSA: ${{ secrets.SIGNING_KEY_ECDSA_P256_SHA256 }}
+          KEY_ED25519: ${{ secrets.SIGNING_KEY_ED25519 }}
+        run: |
+          set -eu
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/signing.key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+
+          case "$PROFILE" in
+            rsa-pss-sha256)
+              test -n "$KEY_RSA"
+              printf '%s\n' "$KEY_RSA" > "$KEY_FILE"
+              ;;
+            ecdsa-p256-sha256)
+              test -n "$KEY_ECDSA"
+              printf '%s\n' "$KEY_ECDSA" > "$KEY_FILE"
+              ;;
+            ed25519)
+              test -n "$KEY_ED25519"
+              printf '%s\n' "$KEY_ED25519" > "$KEY_FILE"
+              ;;
+            *)
+              echo "unsupported profile: $PROFILE" >&2
+              exit 1
+              ;;
+          esac
+
+          mkdir -p out
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out "/output/demo-app-${PROFILE}.bundle.json" \
+            </dev/null
+
+      - name: Upload artifact and signed bundle pair
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-bundle-${{ matrix.profile }}
+          path: |
+            dist/demo-app.tar.gz
+            dist/demo-app.tar.gz.sha256
+            out/demo-app-${{ matrix.profile }}.bundle.json
+
+  verify:
+    needs: sign
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [rsa-pss-sha256, ecdsa-p256-sha256, ed25519]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download artifact and signed bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-bundle-${{ matrix.profile }}
+          path: .
+
+      - name: Load pinned image and release metadata
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *)
+              echo "error: IMAGE must be pinned by @sha256 digest" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR and pull pinned image
+        run: |
+          set -eu
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Verify release bundle against trust store
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -eu
+          sha256sum -c dist/demo-app.tar.gz.sha256
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            -v "$PWD/ci/trust.json:/trust.json:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle "/output/demo-app-${PROFILE}.bundle.json" \
+            --trust-store /trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+          cat out/verification.json
+          jq -e --arg prof "$PROFILE" '.valid == true and .status == "OK" and .algorithm == $prof' out/verification.json >/dev/null
+          sha256sum dist/demo-app.tar.gz > out/verified-artifact.sha256
+
+      - name: Upload verified release materials
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-release-${{ matrix.profile }}
+          path: |
+            dist/demo-app.tar.gz
+            out/demo-app-${{ matrix.profile }}.bundle.json
+            out/verification.json
+            out/verified-artifact.sha256
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [rsa-pss-sha256, ecdsa-p256-sha256, ed25519]
+    steps:
+      - name: Download verified release materials
+        uses: actions/download-artifact@v4
+        with:
+          name: verified-release-${{ matrix.profile }}
+          path: .
+
+      - name: Verify artifact integrity and create deployment marker
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -eu
+          sha256sum -c out/verified-artifact.sha256
+          jq -e '.valid == true and .status == "OK"' out/verification.json >/dev/null
+          PKG=$(jq -r '.package' out/verification.json)
+          VER=$(jq -r '.version' out/verification.json)
+          SHA=$(awk '{print $1}' out/verified-artifact.sha256)
+          {
+            echo "status=deployed"
+            echo "package=$PKG"
+            echo "version=$VER"
+            echo "profile=$PROFILE"
+            echo "artifact_sha256=$SHA"
+          } > "out/deployed-${PROFILE}.marker"
+          cat "out/deployed-${PROFILE}.marker"
+
+      - name: Upload deployed release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-deployed-${{ matrix.profile }}
+          path: |
+            dist/demo-app.tar.gz
+            out/demo-app-${{ matrix.profile }}.bundle.json
+            out/verification.json
+            out/deployed-${{ matrix.profile }}.marker

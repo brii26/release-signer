@@ -1,0 +1,508 @@
+name: ci-integration
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  C01:
+    name: "C01 (${{ matrix.profile }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [rsa-pss-sha256, ecdsa-p256-sha256, ed25519]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load image digest and pull container
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *)
+              echo "error: IMAGE must be pinned by @sha256 digest" >&2
+              exit 1
+              ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Prepare artifact and run C01 sign + verify
+        env:
+          PROFILE: ${{ matrix.profile }}
+          KEY_RSA: ${{ secrets.SIGNING_KEY_RSA_PSS_SHA256 }}
+          KEY_ECDSA: ${{ secrets.SIGNING_KEY_ECDSA_P256_SHA256 }}
+          KEY_ED25519: ${{ secrets.SIGNING_KEY_ED25519 }}
+        run: |
+          set -eu
+          rm -rf build dist out && mkdir -p build/demo-app dist out
+          printf 'package=%s\nversion=%s\n' "$PACKAGE" "$VERSION" > build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/signing.key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          case "$PROFILE" in
+            rsa-pss-sha256) printf '%s\n' "$KEY_RSA" > "$KEY_FILE" ;;
+            ecdsa-p256-sha256) printf '%s\n' "$KEY_ECDSA" > "$KEY_FILE" ;;
+            ed25519) printf '%s\n' "$KEY_ED25519" > "$KEY_FILE" ;;
+            *) echo "unsupported profile: $PROFILE" >&2; exit 1 ;;
+          esac
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out /output/rilis.json \
+            </dev/null
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            -v "$PWD/ci/trust.json:/trust.json:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+
+          code=$?
+          echo "exit=$code" | tee out/exit_code.txt
+          test "$code" -eq 0
+          cat out/verification.json
+          jq -e --arg prof "$PROFILE" '.valid == true and .status == "OK" and .algorithm == $prof' out/verification.json >/dev/null
+
+          if [ "$code" -eq 0 ]; then
+            printf 'deployed profile=%s\n' "$PROFILE" > out/deployed.marker
+            cp out/deployed.marker "out/deployed-${PROFILE}.marker"
+          fi
+          test -e out/deployed.marker
+          test -e "out/deployed-${PROFILE}.marker"
+          ls -la out > out/ls_out.txt
+
+      - name: Upload C01 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-C01-${{ matrix.profile }}
+          path: out/
+
+  C02:
+    name: "C02 (tamper 1 byte -> ARTIFACT_MISMATCH)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load image digest and pull container
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *) exit 1 ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Run C02 artifact tamper rejection
+        env:
+          KEY_ED25519: ${{ secrets.SIGNING_KEY_ED25519 }}
+        run: |
+          set -eu
+          rm -rf build dist out && mkdir -p build/demo-app dist out
+          printf 'package=%s\nversion=%s\npayload=deterministic-ci-test\n' "$PACKAGE" "$VERSION" > build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/signing.key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          printf '%s\n' "$KEY_ED25519" > "$KEY_FILE"
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out /output/rilis.json \
+            </dev/null
+
+          ORIG_SHA=$(sha256sum dist/demo-app.tar.gz | awk '{print $1}')
+          printf '\x00' | dd of=dist/demo-app.tar.gz bs=1 seek=10 conv=notrunc status=none
+          NEW_SHA=$(sha256sum dist/demo-app.tar.gz | awk '{print $1}')
+          if [ "$ORIG_SHA" = "$NEW_SHA" ]; then
+            printf '\xff' | dd of=dist/demo-app.tar.gz bs=1 seek=10 conv=notrunc status=none
+          fi
+
+          set +e
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            -v "$PWD/ci/trust.json:/trust.json:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+          code=$?
+          set -e
+
+          echo "exit=$code" | tee out/exit_code.txt
+          cat out/verification.json
+          test "$code" -eq 1
+          jq -e '.valid == false and .status == "ARTIFACT_MISMATCH"' out/verification.json >/dev/null
+
+          if [ "$code" -eq 0 ]; then
+            touch out/deployed.marker
+          fi
+
+      - name: Assert C02 deployment blocked
+        run: |
+          set -eu
+          test ! -e out/deployed.marker
+          ls -la out | tee out/ls_out.txt
+
+      - name: Upload C02 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-C02
+          path: out/
+
+  C03:
+    name: "C03 (empty & wrong-package trust -> KEY_NOT_TRUSTED)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load image digest and pull container
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *) exit 1 ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Run C03 untrusted key rejections
+        env:
+          KEY_ED25519: ${{ secrets.SIGNING_KEY_ED25519 }}
+        run: |
+          set -eu
+          rm -rf build dist out && mkdir -p build/demo-app dist out
+          printf 'package=%s\nversion=%s\n' "$PACKAGE" "$VERSION" > build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/signing.key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          printf '%s\n' "$KEY_ED25519" > "$KEY_FILE"
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out /output/rilis.json \
+            </dev/null
+
+          # Case A: Empty trust store
+          printf '{"schema":"minisign-trust/v1","keys":[]}\n' > out/empty-trust.json
+          set +e
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /output/empty-trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification-empty.json
+          code_empty=$?
+          set -e
+          cat out/verification-empty.json
+          test "$code_empty" -eq 1
+          jq -e '.valid == false and .status == "KEY_NOT_TRUSTED"' out/verification-empty.json >/dev/null
+          if [ "$code_empty" -eq 0 ]; then
+            touch out/deployed.marker
+          fi
+
+          # Case B: Key authorized only for other-app
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/ci/keys:/keys:ro" \
+            -v "$PWD/out:/output" \
+            "$IMAGE" trust add \
+            --key /keys/ed25519.pub.pem \
+            --package other-app \
+            --store /output/other-trust.json \
+            </dev/null
+
+          set +e
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /output/other-trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+          code_pkg=$?
+          set -e
+          cat out/verification.json
+          printf 'exit_empty=%d\nexit_other_pkg=%d\n' "$code_empty" "$code_pkg" | tee out/exit_code.txt
+          test "$code_pkg" -eq 1
+          jq -e '.valid == false and .status == "KEY_NOT_TRUSTED"' out/verification.json >/dev/null
+          if [ "$code_pkg" -eq 0 ]; then
+            touch out/deployed.marker
+          fi
+
+      - name: Assert C03 deployment blocked
+        run: |
+          set -eu
+          test ! -e out/deployed.marker
+          ls -la out | tee out/ls_out.txt
+
+      - name: Upload C03 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-C03
+          path: out/
+
+  C04:
+    name: "C04 (missing file -> INPUT_ERROR)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load image digest and pull container
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *) exit 1 ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Run C04 missing artifact rejection
+        env:
+          KEY_ED25519: ${{ secrets.SIGNING_KEY_ED25519 }}
+        run: |
+          set -eu
+          rm -rf build dist out && mkdir -p build/demo-app dist out
+          printf 'package=%s\nversion=%s\n' "$PACKAGE" "$VERSION" > build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+
+          umask 077
+          KEY_FILE="${RUNNER_TEMP}/signing.key.pem"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          printf '%s\n' "$KEY_ED25519" > "$KEY_FILE"
+
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            -v "$KEY_FILE:/key.pem:ro" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /key.pem \
+            --out /output/rilis.json \
+            </dev/null
+
+          set +e
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            -v "$PWD/ci/trust.json:/trust.json:ro" \
+            "$IMAGE" verify \
+            --file /input/tidak-ada.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+          code=$?
+          set -e
+
+          echo "exit=$code" | tee out/exit_code.txt
+          cat out/verification.json
+          test "$code" -eq 2
+          jq -e '.valid == false and .status == "INPUT_ERROR"' out/verification.json >/dev/null
+
+          if [ "$code" -eq 0 ]; then
+            touch out/deployed.marker
+          fi
+
+      - name: Assert C04 deployment blocked
+        run: |
+          set -eu
+          test ! -e out/deployed.marker
+          ls -la out | tee out/ls_out.txt
+
+      - name: Upload C04 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-C04
+          path: out/
+
+  C05:
+    name: "C05 (non-root UID, --network none, no TTY)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load image digest and pull container
+        run: |
+          set -eu
+          set -a
+          . ./ci/image.env
+          . ./ci/release.env
+          set +a
+          case "$IMAGE" in
+            *@sha256:*) ;;
+            *) exit 1 ;;
+          esac
+          {
+            echo "IMAGE=$IMAGE"
+            echo "PACKAGE=$PACKAGE"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - name: Run C05 non-root UID & network-isolated end-to-end flow
+        run: |
+          set -eu
+          rm -rf build dist out && mkdir -p build/demo-app dist out
+          printf 'package=%s\nversion=%s\n' "$PACKAGE" "$VERSION" > build/demo-app/README.txt
+          tar --sort=name --mtime='@0' --owner=0 --group=0 --numeric-owner -cf - -C build demo-app | gzip -n > dist/demo-app.tar.gz
+
+          HOST_UID=$(id -u)
+          HOST_GID=$(id -g)
+
+          docker run --rm --network none --user "${HOST_UID}:${HOST_GID}" \
+            -v "$PWD/out:/output" \
+            "$IMAGE" keygen \
+            --algorithm ed25519 \
+            --out /output/ephemeral \
+            </dev/null
+
+          docker run --rm --network none --user "${HOST_UID}:${HOST_GID}" \
+            -v "$PWD/out:/output" \
+            "$IMAGE" trust add \
+            --key /output/ephemeral.pub.pem \
+            --package "$PACKAGE" \
+            --store /output/trust.json \
+            </dev/null
+
+          docker run --rm --network none --user "${HOST_UID}:${HOST_GID}" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output" \
+            "$IMAGE" sign \
+            --file /input/demo-app.tar.gz \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --key /output/ephemeral.key.pem \
+            --out /output/rilis.json \
+            </dev/null
+
+          docker run --rm --network none --user "${HOST_UID}:${HOST_GID}" \
+            -v "$PWD/dist:/input:ro" \
+            -v "$PWD/out:/output:ro" \
+            "$IMAGE" verify \
+            --file /input/demo-app.tar.gz \
+            --bundle /output/rilis.json \
+            --trust-store /output/trust.json \
+            --package "$PACKAGE" \
+            --version "$VERSION" \
+            --json </dev/null > out/verification.json
+
+          code=$?
+          echo "exit=$code" > out/exit_code.txt
+          test "$code" -eq 0
+          cat out/verification.json
+          jq -e '.valid == true and .status == "OK"' out/verification.json >/dev/null
+
+          {
+            echo "host_uid=${HOST_UID}"
+            for f in out/*; do
+              uid=$(stat -c %u "$f")
+              echo "$f uid=$uid"
+              test "$uid" = "$HOST_UID"
+            done
+          } | tee out/uid_check.txt
+
+          rm -f out/ephemeral.key.pem
+          ls -la out | tee out/ls_out.txt
+
+      - name: Upload C05 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-C05
+          path: out/

@@ -1,0 +1,7 @@
+total 12
+drwxr-xr-x 2 darrel darrel 120 Nov 14 19:27 .
+drwx------ 5 darrel darrel 100 Nov 14 19:27 ..
+-rw-r--r-- 1 darrel darrel   7 Nov 14 19:27 exit_code.txt
+-rw-r--r-- 1 darrel darrel   0 Nov 14 19:27 ls_out.txt
+-rw------- 1 darrel darrel 562 Nov 14 19:27 rilis.json
+-rw-r--r-- 1 darrel darrel 363 Nov 14 19:27 verification.json
