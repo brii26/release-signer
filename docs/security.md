@@ -1,38 +1,35 @@
-# Analisis Keamanan dan Threat Model
+# Security Analysis and Threat Model
 
-Dokumen ini menjelaskan apa yang dilindungi release-signer, dari siapa, dan bukti
-mitigasinya. Setiap klaim menunjuk ke file kode atau ID tes. Bagian yang belum
-terbukti ditandai **Belum** beserta issue yang akan menutupnya.
+This document explains what release-signer protects, from whom, and the evidence for each mitigation. Every claim points to a code file or a test ID.
 
-## 1. Aset
+## 1. Assets
 
-| Aset | Alasan penting | Lokasi |
+| Asset | Why it matters | Location |
 |---|---|---|
-| Private key penerbit | Siapa pun yang memegangnya bisa menerbitkan rilis atas nama penerbit | File `*.key.pem` (PKCS#8), secret CI |
-| Trust store | Menentukan key mana yang dipercaya dan untuk paket apa | `trust.json` milik penerima |
-| Artefak rilis | Yang akan dijalankan atau dipasang penerima | Dikirim lewat relay |
-| Bundle | Memuat manifest dan signature | Dikirim bersama artefak |
-| Image program | Menjalankan sign dan verify di pipeline | GHCR |
+| Publisher private key | Whoever holds it can publish releases on behalf of the publisher | `*.key.pem` files (PKCS#8), CI secret |
+| Trust store | Decides which keys are trusted and for which packages | `trust.json` owned by the recipient |
+| Release artifact | What the recipient will run or install | Delivered through a relay |
+| Bundle | Holds the manifest and signature | Delivered with the artifact |
+| Program image | Runs sign and verify in the pipeline | GHCR |
 
-## 2. Arsitektur dan batas kepercayaan
+## 2. Architecture and trust boundaries
 
-Kepercayaan hanya berasal dari trust store penerima. Relay, bundle, dan artefak
-dianggap tidak tepercaya sampai lolos verify.
+Trust only comes from the recipient's trust store. The relay, the bundle, and the artifact are untrusted until they pass verify.
 
 ```mermaid
 flowchart LR
-  subgraph PUB["Zona penerbit (tepercaya)"]
+  subgraph PUB["Publisher zone (trusted)"]
     PK["Private key<br/>PKCS#8, mode 0600"]
     SIGN["sign"]
     PK --> SIGN
   end
 
-  subgraph NET["Relay atau mirror (TIDAK tepercaya)"]
-    ART["Artefak"]
+  subgraph NET["Relay or mirror (NOT trusted)"]
+    ART["Artifact"]
     BUN["Bundle<br/>manifest_b64 + signature_b64"]
   end
 
-  subgraph CON["Zona penerima (tepercaya)"]
+  subgraph CON["Recipient zone (trusted)"]
     TS["Trust store<br/>keyid, algorithm, public key, packages"]
     VER["verify"]
     TS --> VER
@@ -42,188 +39,157 @@ flowchart LR
   SIGN --> BUN
   ART --> VER
   BUN --> VER
-  PUBKEY["Public key dan keyid<br/>lewat jalur terpisah"] -. "trust add, fingerprint dicek manual" .-> TS
-  ATK(("Penyerang")) -. "ganti file atau bundle" .-> NET
+  PUBKEY["Public key and keyid<br/>over a separate channel"] -. "trust add, fingerprint checked manually" .-> TS
+  ATK(("Attacker")) -. "replace file or bundle" .-> NET
 ```
 
-Poin desain yang menentukan keamanan:
+Design points that decide security:
 
-- Bundle tidak membawa public key. Penyerang tidak bisa memperkenalkan key sendiri.
-- `trust add` adalah satu-satunya jalan menambah kepercayaan, dan dijalankan manual
-  oleh penerima. `verify` tidak pernah menulis trust store.
-- Izin key dibatasi per paket, jadi key untuk paket A tidak sah untuk paket B.
-- Verify berhenti di kegagalan pertama dan tidak mencoba key, profil, atau trust
-  store lain.
+- The bundle does not carry a public key. An attacker cannot introduce their own key.
+- `trust add` is the only way to add trust, and the recipient runs it manually. `verify` never writes the trust store.
+- Key permissions are scoped per package, so a key for package A is not valid for package B.
+- Verify stops at the first failure and never tries another key, profile, or trust store.
 
-## 3. Alur verifikasi sebagai gerbang
+## 3. The verification flow as a gate
 
-Urutan mengikuti Tabel 2.8 spek dan ditulis di `pkg/release/verify.go`.
+The order follows Table 2.8 of the spec and is implemented in `pkg/release/verify.go`.
 
 ```mermaid
 flowchart TD
-  S(["verify"]) --> C1{"1. Input terbaca?"}
-  C1 -- tidak --> F1["INPUT_ERROR<br/>exit 2"]
-  C1 -- ya --> C2{"2. Format bundle, manifest,<br/>trust store valid dan canonical?"}
-  C2 -- tidak --> F2["FORMAT_ERROR<br/>exit 1"]
-  C2 -- ya --> C3{"3. Algoritma dikenal?"}
-  C3 -- tidak --> F3["UNSUPPORTED_ALGORITHM<br/>exit 1"]
-  C3 -- ya --> C4{"4. keyid ada di trust store,<br/>profil sama, boleh untuk paket?"}
-  C4 -- tidak --> F4["KEY_NOT_TRUSTED<br/>exit 1"]
-  C4 -- ya --> C5{"5. Signature sah<br/>atas byte manifest?"}
-  C5 -- tidak --> F5["INVALID_SIGNATURE<br/>exit 1"]
-  C5 -- ya --> C6{"6. Package, version, nama file<br/>sama dengan permintaan?"}
-  C6 -- tidak --> F6["METADATA_MISMATCH<br/>exit 1"]
-  C6 -- ya --> C7{"7. Size dan sha256<br/>artefak sama?"}
-  C7 -- tidak --> F7["ARTIFACT_MISMATCH<br/>exit 1"]
-  C7 -- ya --> OK(["OK<br/>exit 0"])
+  S(["verify"]) --> C1{"Input readable?"}
+  C1 -- no --> F1["INPUT_ERROR<br/>exit 2"]
+  C1 -- yes --> C2{"Bundle, manifest, and trust store<br/>valid and canonical?"}
+  C2 -- no --> F2["FORMAT_ERROR<br/>exit 1"]
+  C2 -- yes --> C3{"Algorithm known?"}
+  C3 -- no --> F3["UNSUPPORTED_ALGORITHM<br/>exit 1"]
+  C3 -- yes --> C4{"keyid in trust store,<br/>same profile, allowed for package?"}
+  C4 -- no --> F4["KEY_NOT_TRUSTED<br/>exit 1"]
+  C4 -- yes --> C5{"Signature valid<br/>over the manifest bytes?"}
+  C5 -- no --> F5["INVALID_SIGNATURE<br/>exit 1"]
+  C5 -- yes --> C6{"Package, version, and file name<br/>match the request?"}
+  C6 -- no --> F6["METADATA_MISMATCH<br/>exit 1"]
+  C6 -- yes --> C7{"Artifact size and sha256<br/>match?"}
+  C7 -- no --> F7["ARTIFACT_MISMATCH<br/>exit 1"]
+  C7 -- yes --> OK(["OK<br/>exit 0"])
 ```
 
-Signature dicek atas byte manifest persis seperti yang ada di bundle. Manifest tidak
-diformat ulang sebelum dicek, dan canonical check membandingkan hasil serialisasi
-ulang dengan byte asli.
+The signature is checked over the manifest bytes exactly as they are in the bundle. The manifest is not reformatted before the check, and the canonical check compares the re-serialized result with the original bytes.
 
 ## 4. Threat model
 
-| # | Ancaman | Dampak | Mitigasi | Bukti |
+| # | Threat | Impact | Mitigation | Evidence |
 |---|---|---|---|---|
-| T1 | Relay mengganti artefak | Penerima memasang file palsu | Hash dan size artefak dicek terhadap manifest yang bertanda tangan | U02, U03, `TestVerifyArtifactTamper` |
-| T2 | Relay mengganti artefak dan manifest | File palsu dengan hash cocok | Manifest diubah berarti signature tidak cocok | U04, `TestVerifyInvalidSignature`, `TestVerifyManifestVersionModifiedInvalidSignature` |
-| T3 | Penyerang menandatangani dengan key sendiri dan menulis keyid-nya | Rilis palsu lolos secara kriptografis | Key hanya dipercaya jika ada di trust store | U12, `TestVerifyUnknownKeySameProfile` |
-| T4 | Key sah untuk paket lain dipakai untuk paket ini | Penerbit satu paket menerbitkan paket lain | Izin key per paket | U07, `TestVerifyKeyNotTrusted` |
-| T5 | Key dicabut atau trust store kosong | Rilis lama dari key bermasalah tetap diterima | Verify hanya memakai isi trust store saat itu | U06, `TestVerifyEmptyTrustStore` |
-| T6 | Bundle atau manifest cacat: duplicate key, tipe salah, Base64 invalid, terlalu besar | Parser berbeda membaca isi berbeda | `pkg/strictjson`, `pkg/b64`, batas 16 KiB dan 64 KiB | U10a sampai U10d, `Neg_BundleTooLarge`, tes di `pkg/strictjson` dan `pkg/b64` |
-| T7 | Manifest tidak canonical atau di-reformat | Dua byte berbeda untuk isi sama | Serialisasi ulang lalu bandingkan byte | `TestVerifyNonCanonicalManifest`, `pkg/manifest` |
-| T8 | Algorithm confusion atau downgrade | Verifikasi memakai algoritma lemah atau salah | Hanya 3 profil, profil key harus sama dengan manifest | U11, `TestVerifyUnsupportedAlgorithm`, `TestVerifyKeyProfileMismatch`, `Neg_ProfileMismatch` |
-| T9 | Nama file atau versi tidak sesuai | Rilis lain diterima sebagai yang diminta | Package, version, dan basename dicek persis | U08, U09, `TestVerifyMetadataMismatch`, `TestVerifyArtifactRenamed` |
-| T10 | ECDSA dengan r atau s di luar domain | Verifier crash atau menerima nilai ilegal | r, s dicek rentangnya, hasilnya `INVALID_SIGNATURE` | `TestVerifyECDSARZero`, `TestECDSABoundaries` |
-| T11 | Trust store rusak saat gagal tulis | Kepercayaan hilang atau korup | Tulis ke temp file lalu rename | `TestSaveFailurePreservesStore` |
-| T12 | Private key bocor | Penyerang menerbitkan rilis sah | Lihat bagian 5.1 | `TestWriteKeyPair`, `TestSignRejectsUnsupportedKeys` |
-| T13 | Image program diganti | Tool penandatangan atau verifikasi dimanipulasi | Pin image lewat digest | `ci/image.env`, `release-pipeline.yml`, `ci-integration.yml` |
-| T14 | Rollback ke rilis lama yang sah | Penerima memasang versi rentan | Sebagian, lihat bagian 5.5 | `TestVerifyMetadataMismatch` (hanya jika versi dipin) |
+| T1 | Relay replaces the artifact | Recipient installs a fake file | Artifact hash and size are checked against the signed manifest | U02, U03, `TestVerifyArtifactTamper` |
+| T2 | Relay replaces the artifact and the manifest | Fake file with a matching hash | A modified manifest means the signature no longer matches | U04, `TestVerifyInvalidSignature`, `TestVerifyManifestVersionModifiedInvalidSignature` |
+| T3 | Attacker signs with their own key and writes its keyid | Fake release passes cryptographically | A key is only trusted if it is in the trust store | U12, `TestVerifyUnknownKeySameProfile` |
+| T4 | A key valid for another package is used for this one | One package's publisher publishes another package | Per-package key permission | U07, `TestVerifyKeyNotTrusted` |
+| T5 | Key revoked or trust store empty | Old releases from a problematic key are still accepted | Verify only uses the trust store contents at that moment | U06, `TestVerifyEmptyTrustStore` |
+| T6 | Malformed bundle or manifest: duplicate key, wrong type, invalid Base64, too large | Different parsers read different content | `pkg/strictjson`, `pkg/b64`, 16 KiB and 64 KiB limits | U10a to U10d, `Neg_BundleTooLarge`, tests in `pkg/strictjson` and `pkg/b64` |
+| T7 | Non-canonical or reformatted manifest | Two different byte sequences for the same content | Re-serialize and compare bytes | `TestVerifyNonCanonicalManifest`, `pkg/manifest` |
+| T8 | Algorithm confusion or downgrade | Verification uses a weak or wrong algorithm | Only 3 profiles, the key profile must equal the manifest | U11, `TestVerifyUnsupportedAlgorithm`, `TestVerifyKeyProfileMismatch`, `Neg_ProfileMismatch` |
+| T9 | File name or version does not match | Another release is accepted as the requested one | Package, version, and basename are checked exactly | U08, U09, `TestVerifyMetadataMismatch`, `TestVerifyArtifactRenamed` |
+| T10 | ECDSA with r or s outside the domain | Verifier crashes or accepts an illegal value | r and s are range checked, the result is `INVALID_SIGNATURE` | `TestVerifyECDSARZero`, `TestECDSABoundaries` |
+| T11 | Trust store corrupted by a failed write | Trust is lost or corrupted | Write to a temp file, then rename | `TestSaveFailurePreservesStore` |
+| T12 | Private key leak | Attacker publishes valid releases | See section 5.1 | `TestWriteKeyPair`, `TestSignRejectsUnsupportedKeys` |
+| T13 | Program image replaced | Signing or verification tool is tampered with | Pin the image by digest | `ci/image.env`, `release-pipeline.yml`, `ci-integration.yml` |
+| T14 | Rollback to an old legitimate release | Recipient installs a vulnerable version | Partial, see section 5.5 | `TestVerifyMetadataMismatch` (only if the version is pinned) |
 
-## 5. Pembahasan wajib
+## 5. Required discussion
 
-### 5.1 Kebocoran private key
+### 5.1 Private key leak
 
-- File kunci dibuat dengan mode `0600` dan `O_EXCL`, sehingga tidak menimpa file lama
-  tanpa `--force`. Kode: `keys.WriteKeyPair` di `pkg/keys/keys.go`. Tes: `TestWriteKeyPair`.
-- Isi kunci tidak pernah masuk bundle. Bundle hanya berisi `schema`, `manifest_b64`,
-  dan `signature_b64`. Kode: `pkg/bundle/bundle.go`.
-- Kegagalan membaca kunci memakai pesan generik, karena error dari parser PEM bisa
-  memuat label seperti `RSA PRIVATE KEY`. Kode: `pkg/release/sign.go`. Tes:
-  `TestSignRejectsUnsupportedKeys` memastikan error tidak memuat `PRIVATE KEY` maupun isi kunci.
-- Image dibangun tanpa kunci. `.dockerignore` mengecualikan `*.pem`, `*.key`, dan
-  `test/keys/`, dan image akhir memakai `distroless/static:nonroot` hanya dengan satu binary.
-  Bukti: `Dockerfile` dan `.dockerignore`.
-- Verify tidak menerima private key sama sekali. Job `verify` dan `deploy` di
-  `.github/workflows/release-pipeline.yml` berjalan tanpa akses ke secret penandatanganan.
+- Key files are created with mode `0600` and `O_EXCL`, so they do not overwrite an old file without `--force`. Code: `keys.WriteKeyPair` in `pkg/keys/keys.go`. Test: `TestWriteKeyPair`.
+- The key content never enters the bundle. The bundle only holds `schema`, `manifest_b64`, and `signature_b64`. Code: `pkg/bundle/bundle.go`.
+- A failure to read a key uses a generic message, because an error from the PEM parser can contain a label such as `RSA PRIVATE KEY`. Code: `pkg/release/sign.go`. Test: `TestSignRejectsUnsupportedKeys` checks that the error contains neither `PRIVATE KEY` nor the key content.
+- The image is built without keys. `.dockerignore` excludes `*.pem`, `*.key`, and `test/keys/`, and the final image uses `distroless/static:nonroot` with a single binary. Evidence: `Dockerfile` and `.dockerignore`.
+- Verify accepts no private key at all. The `verify` and `deploy` jobs in `.github/workflows/release-pipeline.yml` run without access to the signing secrets.
 
-### 5.2 Reuse nonce ECDSA
+### 5.2 ECDSA nonce reuse
 
-Dua signature ECDSA dengan nonce `k` yang sama atas pesan berbeda membocorkan
-private key. Program tidak memilih nonce sendiri. `ecdsa.Sign` dari Go memakai
-nonce yang diturunkan dari CSPRNG dan dicampur dengan private key serta hash pesan
-(hedged), jadi kegagalan RNG saja tidak cukup untuk mengulang nonce.
+Two ECDSA signatures with the same nonce `k` over different messages leak the private key. The program does not choose the nonce itself. Go's `ecdsa.Sign` uses a nonce derived from the CSPRNG and mixed with the private key and the message hash (hedged), so an RNG failure alone is not enough to repeat a nonce.
 
-Bukti perilakunya: `TestSignatureDeterminismAcrossRuns` di `pkg/sigalg` dan skenario
-U14 menunjukkan signature RSA-PSS dan ECDSA atas manifest yang sama berbeda tiap
-kali sign, sedangkan Ed25519 identik karena deterministik (RFC 8032). Ketiganya lolos verify.
+Evidence of the behavior: `TestSignatureDeterminismAcrossRuns` in `pkg/sigalg` and scenario U14 show that RSA-PSS and ECDSA signatures over the same manifest differ on every sign, while Ed25519 is identical because it is deterministic (RFC 8032). All three pass verify.
 
-### 5.3 Kesalahan parameter
+### 5.3 Parameter mistakes
 
-| Risiko | Penjagaan | Bukti |
+| Risk | Safeguard | Evidence |
 |---|---|---|
-| RSA bukan 3072 bit atau e bukan 65537 | `ProfileOf` menolak | `TestProfileOf_Rejections` |
-| Kurva selain P-256 | `ProfileOf` menolak | `TestProfileOf_Rejections` |
-| Salt PSS salah | Salt 32 byte eksplisit, bukan auto | `TestRSAPSSRejectNon32ByteSalt` |
-| Double hashing RSA dan ECDSA | SHA-256 dihitung sekali atas manifest | `TestDoubleHashingGuards` |
-| Ed25519ph | Hanya `ed25519.Sign` atas pesan asli | `TestRFC8032TestVector1` |
-| Label PEM atau format kunci salah | Hanya `PRIVATE KEY` (PKCS#8) dan `PUBLIC KEY` (SPKI) | `TestParsePEM_Rejections` |
-| keyid berubah karena line ending | keyid dari ekspor ulang DER | `TestPEMLineEndingsAndFolding` |
+| RSA that is not 3072 bits or e is not 65537 | `ProfileOf` rejects it | `TestProfileOf_Rejections` |
+| A curve other than P-256 | `ProfileOf` rejects it | `TestProfileOf_Rejections` |
+| Wrong PSS salt | Explicit 32 byte salt, not auto | `TestRSAPSSRejectNon32ByteSalt` |
+| Double hashing for RSA and ECDSA | SHA-256 is computed once over the manifest | `TestDoubleHashingGuards` |
+| Ed25519ph | Only `ed25519.Sign` over the original message | `TestRFC8032TestVector1` |
+| Wrong PEM label or key format | Only `PRIVATE KEY` (PKCS#8) and `PUBLIC KEY` (SPKI) | `TestParsePEM_Rejections` |
+| keyid changes because of line endings | keyid comes from the re-exported DER | `TestPEMLineEndingsAndFolding` |
 
-### 5.4 Public key dari sumber tidak tepercaya
+### 5.4 Public key from an untrusted source
 
-- Bundle tidak membawa public key, jadi tidak ada key yang bisa "dikirim" penyerang.
-- `trust add` menampilkan fingerprint, algoritma, dan paket. Penerima wajib mencocokkan
-  fingerprint dengan sumber terpercaya sebelum menjalankannya. Program tidak bisa
-  memeriksa ini, itu tanggung jawab penerima.
-- Entri trust store divalidasi ketat: fingerprint harus cocok dengan PEM, profil
-  harus cocok dengan tipe kunci, paket tidak boleh kosong, duplikat, atau wildcard.
-  Tes: `TestLoadRejects`, `TestLoadErrors`.
-- Tidak ada pembaruan otomatis. `verify` tidak menulis trust store.
+- The bundle does not carry a public key, so there is no key an attacker can "send".
+- `trust add` shows the fingerprint, algorithm, and package. The recipient must compare the fingerprint with a trusted source before running it. The program cannot check this, it is the recipient's responsibility.
+- Trust store entries are validated strictly: the fingerprint must match the PEM, the profile must match the key type, and packages must not be empty, duplicated, or wildcards. Tests: `TestLoadRejects`, `TestLoadErrors`.
+- There is no automatic update. `verify` does not write the trust store.
 
 ### 5.5 Rollback attack
 
-**Rancangan saat ini tidak mencegah rollback sepenuhnya.**
+**The current design does not fully prevent rollback.**
 
-Manifest memuat versi, dan verify menolak jika versi di manifest berbeda dari
-`--version` yang diminta (`METADATA_MISMATCH`, `TestVerifyMetadataMismatch`). Itu
-melindungi penerima yang **memin versi** sendiri dari konfigurasi tepercaya.
+The manifest carries the version, and verify rejects a manifest whose version differs from the requested `--version` (`METADATA_MISMATCH`, `TestVerifyMetadataMismatch`). This protects a recipient who **pins the version** itself from trusted configuration.
 
-Yang tidak tercegah:
+What is not prevented:
 
-- Penerima yang mengambil nilai `--version` dari relay yang sama. Penyerang
-  menyajikan bundle dan artefak lama yang sah (misalnya 1.0.0 yang rentan) bersama
-  klaim "versi terbaru adalah 1.0.0", dan verify akan menerimanya.
-- Bundle tidak punya waktu kedaluwarsa. Bundle lama yang sah tetap lolos selama
-  key-nya ada di trust store.
-- Tidak ada pencabutan per rilis. Satu-satunya cara adalah `trust remove`, yang
-  mencabut seluruh key.
+- A recipient that takes the `--version` value from the same relay. The attacker serves an old legitimate bundle and artifact (for example a vulnerable 1.0.0) together with the claim that "the latest version is 1.0.0", and verify accepts it.
+- The bundle has no expiry time. An old legitimate bundle still passes as long as its key is in the trust store.
+- There is no per-release revocation. The only way is `trust remove`, which revokes the whole key.
 
-Trusted state tambahan yang dibutuhkan untuk mendeteksinya:
+Additional trusted state needed to detect it:
 
-1. **Versi tertinggi per paket** yang pernah diterima, disimpan di sisi penerima, dan
-   verify menolak versi yang lebih rendah (counter monoton).
-2. **Waktu kedaluwarsa dan timestamp** pada metadata, mengikuti pola TUF
-   (timestamp, snapshot), supaya bundle lama kedaluwarsa.
-3. **Transparency log** atau daftar pencabutan untuk rilis tertentu.
+1. **Highest version per package** ever accepted, stored on the recipient side, with verify rejecting a lower version (monotonic counter).
+2. **Expiry time and timestamp** in the metadata, following the TUF pattern (timestamp, snapshot), so old bundles expire.
+3. A **transparency log** or revocation list for specific releases.
 
-Tiga hal itu di luar cakupan tugas dan tidak diimplementasikan.
+Those three are outside the scope of the assignment and are not implemented.
 
-### 5.6 Parser dan canonicalization
+### 5.6 Parser and canonicalization
 
-- Duplicate key dideteksi saat parsing di semua level, termasuk yang ditulis lewat
-  escape. Kode: `pkg/strictjson`. Tes: U10a dan tes `pkg/strictjson`.
-- Field tambahan, `null`, dan tipe salah ditolak. Integer harus plain decimal dan
-  maksimum 2^53 - 1. Kode: `pkg/strictjson`, `pkg/manifest`.
-- Batas ukuran dicek sebelum parsing: 16 KiB untuk manifest, 64 KiB untuk bundle.
-- Base64 harus RFC 4648 ketat: tanpa whitespace, padding benar, dan encode ulang
-  harus sama dengan input. Kode: `pkg/b64`.
+- Duplicate keys are detected during parsing at every level, including ones written through an escape. Code: `pkg/strictjson`. Tests: U10a and the `pkg/strictjson` tests.
+- Extra fields, `null`, and wrong types are rejected. Integers must be plain decimal and at most 2^53 - 1. Code: `pkg/strictjson`, `pkg/manifest`.
+- Size limits are checked before parsing: 16 KiB for the manifest and 64 KiB for the bundle.
+- Base64 must be strict RFC 4648: no white space, correct padding, and re-encoding must equal the input. Code: `pkg/b64`.
 
-## 6. Batasan dan hal yang belum terbukti
+## 6. Limitations and unproven items
 
-**Batasan desain**
+**Design limitations**
 
-- Signature membuktikan keaslian dan integritas, bukan bahwa kode bebas malware.
-- Tidak ada revocation selain `trust remove`, dan tidak ada timestamp (lihat 5.5).
-- Keamanan bergantung pada penerima yang memeriksa fingerprint sebelum `trust add`.
-- Kompromi runner atau host penerima di luar cakupan.
+- A signature proves authenticity and integrity, not that the code is free of malware.
+- There is no revocation other than `trust remove`, and no timestamp (see 5.5).
+- Security depends on the recipient checking the fingerprint before `trust add`.
+- A compromised runner or recipient host is out of scope.
 
-**Status pembuktian antar-issue**
+**Proof status per issue**
 
-| Hal | Status | Issue |
+| Item | Status | Issue |
 |---|---|---|
-| Image dikunci lewat digest | Sudah (`ci/image.env` memakai `@sha256:...`; digest final `v1.0.0` dan uji pull publik dipin ulang sebelum rilis) | #14, #22 |
-| Verify tanpa akses secret dan deploy bergantung verify | Sudah (`.github/workflows/release-pipeline.yml`) | #15 |
-| Jalan dengan `--network none`, `--user`, tanpa TTY | Sudah diuji pada container terisolasi (`results/ci/C05/`) | #16 (C05) |
-| Skenario C01 sampai C05 | Sudah diuji lokal + workflow `.github/workflows/ci-integration.yml` (`results/ci/`) | #16 |
-| Signed SBOM (S01 sampai S05) | Belum diimplementasikan | #18 |
-| Interoperabilitas dengan OpenSSL dan Python | Sudah (`results/interop/results.md`) | #13 |
+| Image pinned by digest | Done (`ci/image.env` uses `@sha256:...`, the final `v1.0.0` digest and the public pull test are re-pinned before the release) | #14, #22 |
+| Verify without secret access and deploy depends on verify | Done (`.github/workflows/release-pipeline.yml`) | #15 |
+| Runs with `--network none`, `--user`, and no TTY | Tested in an isolated container (`results/ci/C05/`) | #16 (C05) |
+| Scenarios C01 to C05 | Tested locally and through `.github/workflows/ci-integration.yml` (`results/ci/`) | #16 |
+| Signed SBOM (S01 to S09) | Done (`results/sbom/`, [Signed SBOM](sbom.md)) | #18 |
+| Interoperability with OpenSSL and Python | Done (`results/interop/results.md`) | #13 |
 
-## 7. Pemetaan ke skenario uji
+## 7. Mapping to test scenarios
 
-| Skenario | Menguji | Ancaman |
+| Scenario | Tests | Threat |
 |---|---|---|
-| U01 | Sign dan verify teks, biner, kosong untuk 3 profil | dasar |
-| U02, U03 | Artefak diubah, ditambah, dikurangi | T1 |
-| U04, U05 | Versi manifest diubah, satu bit signature diubah | T2 |
-| U06 | Trust store kosong atau key dicabut | T5 |
-| U07 | Key hanya untuk paket lain | T4 |
-| U08, U09 | Versi atau nama file beda | T9 |
-| U10a sampai U10d | Duplicate key, tipe salah, Base64 invalid, terlalu besar | T6 |
-| U11 | Algoritma tidak didukung | T8 |
-| U12 | Key lain, tidak ada di trust store | T3 |
-| U13 | Bundle di-reformat tetap diterima | T7 (bundle bebas format) |
-| U14 | Signature berulang berbeda atau identik sesuai algoritma | 5.2 |
-| C01 sampai C05 | Integrasi CI/CD | T13, 5.1 (`.github/workflows/ci-integration.yml`, `results/ci/`) |
-| S01 sampai S05 | Signed SBOM | (**Belum**, #18) |
+| U01 | Sign and verify text, binary, and empty for 3 profiles | baseline |
+| U02, U03 | Artifact changed, extended, or truncated | T1 |
+| U04, U05 | Manifest version changed, one signature bit changed | T2 |
+| U06 | Empty trust store or revoked key | T5 |
+| U07 | Key only for another package | T4 |
+| U08, U09 | Different version or file name | T9 |
+| U10a to U10d | Duplicate key, wrong type, invalid Base64, too large | T6 |
+| U11 | Unsupported algorithm | T8 |
+| U12 | Another key, not in the trust store | T3 |
+| U13 | A reformatted bundle is still accepted | T7 (the bundle format is free) |
+| U14 | Repeated signatures differ or are identical depending on the algorithm | 5.2 |
+| C01 to C05 | CI/CD integration | T13, 5.1 (`.github/workflows/ci-integration.yml`, `results/ci/`) |
+| S01 to S09 | Signed SBOM | [Signed SBOM](sbom.md) |

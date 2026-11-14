@@ -332,8 +332,8 @@ func writeResults(dir string) {
 
 	mdPath := filepath.Join(dir, "results.md")
 	var md strings.Builder
-	md.WriteString("# Skenario Uji U01 sampai U14 (Tabel 2.11)\n\n")
-	md.WriteString("| ID | Profil | Input / Cara | Expected Status | Expected Exit | Actual Status | Actual Exit | Result |\n")
+	md.WriteString("# Test Scenarios U01 to U14 (Table 2.11)\n\n")
+	md.WriteString("| ID | Profile | Input / Method | Expected Status | Expected Exit | Actual Status | Actual Exit | Result |\n")
 	md.WriteString("|:---|:---|:---|:---|:---:|:---|:---:|:---:|\n")
 
 	passCount := 0
@@ -361,10 +361,10 @@ func writeResults(dir string) {
 		len(records), passCount, failCount, skipCount))
 
 	if len(u14Records) > 0 {
-		md.WriteString("\n## Analisis Skenario U14: Randomness dan Determinisme Signature\n\n")
+		md.WriteString("\n## U14 Analysis: Signature Randomness and Determinism\n\n")
 		for _, u := range u14Records {
-			md.WriteString(fmt.Sprintf("### Profil: `%s`\n", u.Profile))
-			md.WriteString(fmt.Sprintf("- **Analisis:** %s\n", u.Details))
+			md.WriteString(fmt.Sprintf("### Profile: `%s`\n", u.Profile))
+			md.WriteString(fmt.Sprintf("- **Analysis:** %s\n", u.Details))
 			md.WriteString(fmt.Sprintf("- **Run 1 Signature (Hex):** `%s`\n", u.Run1SigHex))
 			md.WriteString(fmt.Sprintf("- **Run 2 Signature (Hex):** `%s`\n\n", u.Run2SigHex))
 		}

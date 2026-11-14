@@ -178,7 +178,7 @@ func TestS01Valid(t *testing.T) {
 	for _, p := range profiles {
 		t.Run(p, func(t *testing.T) {
 			e := newEnv(t, p)
-			record1(t, "S01", p, "SBOM dan artefak sah", "OK", 0, e.check())
+			record1(t, "S01", p, "valid SBOM and valid artifact", "OK", 0, e.check())
 		})
 	}
 }
@@ -194,7 +194,7 @@ func TestS02SBOMTampered(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
-	record1(t, "S02", "ed25519", "SBOM ditambah 1 byte setelah sign", "ARTIFACT_MISMATCH", 1, e.check())
+	record1(t, "S02", "ed25519", "SBOM gets 1 extra byte after sign", "ARTIFACT_MISMATCH", 1, e.check())
 }
 
 // artefak rilis diganti dengan yang lain dan ditandatangani ulang secara sah, SBOM lama.
@@ -204,7 +204,7 @@ func TestS03ArtifactReplaced(t *testing.T) {
 		t.Fatal(err)
 	}
 	must(t, "sign", "--force", "--file", e.artifact, "--package", pkgName, "--version", version, "--key", e.keyPath, "--out", e.relBndl)
-	record1(t, "S03", "ed25519", "artefak diganti dan ditandatangani ulang, SBOM lama", "SBOM_MISMATCH", 1, e.check())
+	record1(t, "S03", "ed25519", "artifact replaced and re-signed, old SBOM", "SBOM_MISMATCH", 1, e.check())
 }
 
 // SBOM ditandatangani kunci yang tidak ada di trust store.
@@ -214,7 +214,7 @@ func TestS04SBOMUntrustedKey(t *testing.T) {
 	must(t, "keygen", "--algorithm", "ed25519", "--out", other)
 	must(t, "sbom", "sign", "--force", "--sbom", e.sbomPath, "--package", pkgName, "--version", version,
 		"--key", other+".key.pem", "--out", e.sbomBndl)
-	record1(t, "S04", "ed25519", "SBOM ditandatangani kunci di luar trust store", "KEY_NOT_TRUSTED", 1, e.check())
+	record1(t, "S04", "ed25519", "SBOM signed by a key outside the trust store", "KEY_NOT_TRUSTED", 1, e.check())
 }
 
 // SBOM tanpa hash SHA-256 ditolak saat sign.
@@ -238,7 +238,7 @@ func TestS05SBOMWithoutHash(t *testing.T) {
 		t.Errorf("S05: bundle was written for an SBOM without hash")
 	}
 	mu.Lock()
-	records = append(records, record{"S05", "ed25519", "sbom sign tanpa hash SHA-256", "(exit 2, tanpa bundle)", want, "", r.Exit, result})
+	records = append(records, record{"S05", "ed25519", "sbom sign without SHA-256 hash", "(exit 2, no bundle)", want, "", r.Exit, result})
 	mu.Unlock()
 }
 
@@ -248,7 +248,7 @@ func TestReleaseTamperedStopsFirst(t *testing.T) {
 	if err := os.WriteFile(e.artifact, []byte("isi artefak rilis versi satu!\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	record1(t, "S06", "ed25519", "artefak rilis diubah setelah sign", "ARTIFACT_MISMATCH", 1, e.check())
+	record1(t, "S06", "ed25519", "release artifact changed after sign", "ARTIFACT_MISMATCH", 1, e.check())
 }
 
 // Tambahan: SBOM milik versi lain tidak lolos walau signature sah.
@@ -259,13 +259,13 @@ func TestSBOMVersionMismatch(t *testing.T) {
 	must(t, "sbom", "sign", "--force", "--sbom", other, "--package", pkgName, "--version", version,
 		"--key", e.keyPath, "--out", e.sbomBndl)
 	e.sbomPath = other
-	record1(t, "S07", "ed25519", "SBOM berisi versi 2.0.0, diverifikasi sebagai 1.0.0", "SBOM_MISMATCH", 1, e.check())
+	record1(t, "S07", "ed25519", "SBOM contains version 2.0.0, verified as 1.0.0", "SBOM_MISMATCH", 1, e.check())
 }
 
 // Tambahan: flag wajib hilang menghasilkan INPUT_ERROR dan exit 2.
 func TestCheckMissingFlag(t *testing.T) {
 	r := run("sbom", "check", "--json")
-	record1(t, "S08", "-", "sbom check tanpa flag wajib", "INPUT_ERROR", 2, r)
+	record1(t, "S08", "-", "sbom check without required flags", "INPUT_ERROR", 2, r)
 }
 
 // Tambahan: sbom verify berdiri sendiri.
@@ -273,7 +273,7 @@ func TestSBOMVerifyStandalone(t *testing.T) {
 	e := newEnv(t, "ecdsa-p256-sha256")
 	r := run("sbom", "verify", "--sbom", e.sbomPath, "--bundle", e.sbomBndl,
 		"--trust-store", e.trust, "--package", pkgName, "--version", version, "--json")
-	record1(t, "S09", "ecdsa-p256-sha256", "sbom verify sah", "OK", 0, r)
+	record1(t, "S09", "ecdsa-p256-sha256", "standalone sbom verify", "OK", 0, r)
 }
 
 func writeResults(dir string) {
@@ -284,8 +284,8 @@ func writeResults(dir string) {
 		return
 	}
 	var b strings.Builder
-	b.WriteString("# Hasil uji SBOM (S01 sampai S09)\n\n")
-	b.WriteString("| ID | Profil | Input | Expected | Exit | Actual | Exit | Hasil |\n")
+	b.WriteString("# SBOM test results (S01 to S09)\n\n")
+	b.WriteString("| ID | Profile | Input | Expected | Exit | Actual | Exit | Result |\n")
 	b.WriteString("|---|---|---|---|---|---|---|---|\n")
 	for _, r := range sorted() {
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %d | %s | %d | %s |\n",

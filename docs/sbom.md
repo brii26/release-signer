@@ -1,10 +1,10 @@
 # Signed SBOM
 
-SBOM (Software Bill of Materials) ditandatangani sebagai artefak terpisah memakai bundle yang sama dengan rilis (`minisign-bundle/v1`), lalu diikat ke SHA-256 artefak rilis. Manifest, bundle, dan trust store tidak berubah, dan perilaku fitur wajib tetap sama.
+The SBOM (Software Bill of Materials) is signed as a separate artifact using the same bundle as the release (`minisign-bundle/v1`), then bound to the SHA-256 of the release artifact. The manifest, bundle, and trust store are unchanged, and the mandatory features behave the same.
 
-## Format SBOM
+## SBOM format
 
-CycloneDX 1.6 (JSON). `sbom generate` menghasilkan dokumen berikut (nilai contoh):
+CycloneDX 1.6 (JSON). `sbom generate` produces the following document (example values):
 
 ```json
 {
@@ -16,7 +16,7 @@ CycloneDX 1.6 (JSON). `sbom generate` menghasilkan dokumen berikut (nilai contoh
       "type": "application",
       "name": "demo-app",
       "version": "1.0.0",
-      "hashes": [{ "alg": "SHA-256", "content": "<sha256 artefak rilis>" }],
+      "hashes": [{ "alg": "SHA-256", "content": "<release artifact sha256>" }],
       "properties": [{ "name": "release-signer:artifact-name", "value": "demo-app.tar.gz" }]
     }
   },
@@ -24,54 +24,54 @@ CycloneDX 1.6 (JSON). `sbom generate` menghasilkan dokumen berikut (nilai contoh
 }
 ```
 
-Field yang dibaca sebagai binding:
+Fields read as the binding:
 
-| Field | Tipe | Ketentuan |
+| Field | Type | Rule |
 |---|---|---|
-| `bomFormat` | string | Harus `CycloneDX`. |
-| `metadata.component.name` | string | Nama paket. |
-| `metadata.component.version` | string | Versi rilis. |
-| `metadata.component.hashes[]` | array of object | Tepat satu entri dengan `alg` = `SHA-256`. `content` 64 karakter heksadesimal huruf kecil. |
-| `metadata.component.properties[]` | array of object | Tepat satu entri bernama `release-signer:artifact-name`. `value` adalah basename artefak rilis. |
+| `bomFormat` | string | Must be `CycloneDX`. |
+| `metadata.component.name` | string | Package name. |
+| `metadata.component.version` | string | Release version. |
+| `metadata.component.hashes[]` | array of object | Exactly one entry with `alg` = `SHA-256`. `content` is 64 lowercase hexadecimal characters. |
+| `metadata.component.properties[]` | array of object | Exactly one entry named `release-signer:artifact-name`. `value` is the basename of the release artifact. |
 
-Field lain di luar tabel boleh ada, jadi SBOM dari kakas eksternal (misalnya Syft) bisa dipakai selama memuat binding di atas. Parser tetap menolak field duplikat, BOM, UTF-8 tidak valid, data setelah JSON, dan ukuran lebih dari 1 MiB. Daftar `components` dibiarkan kosong oleh `sbom generate`, karena package manager dan dependency resolution tidak diwajibkan.
+Other fields are allowed, so an SBOM from an external tool (for example Syft) can be used as long as it contains the binding above. The parser still rejects duplicate fields, a BOM, invalid UTF-8, data after the JSON, and anything larger than 1 MiB. `sbom generate` leaves the `components` list empty, because a package manager and dependency resolution are not required.
 
-## Subcommand
+## Subcommands
 
-| Perintah | Parameter | Keluaran |
+| Command | Parameters | Output |
 |---|---|---|
-| `sbom generate` | `--file <artefak>` `--package <nama>` `--version <versi>` `--out <sbom.cdx.json>` `[--force]` | File SBOM. Exit 2 kalau input atau I/O gagal. |
-| `sbom sign` | `--sbom <sbom.cdx.json>` `--package <nama>` `--version <versi>` `--key <private.pem>` `--out <sbom.bundle.json>` `[--force]` | Bundle SBOM. SBOM tanpa binding valid ditolak dengan exit 2 dan bundle tidak ditulis. |
-| `sbom verify` | `--sbom` `--bundle <sbom.bundle.json>` `--trust-store` `--package` `--version` `[--json]` | Hasil verify (Tabel 2.9), urutan dan status sama dengan `verify` (Tabel 2.8). |
-| `sbom check` | `--file <artefak>` `--bundle <release.json>` `--sbom` `--sbom-bundle` `--trust-store` `--package` `--version` `[--json]` | Hasil gabungan di bawah. |
+| `sbom generate` | `--file <artifact>` `--package <name>` `--version <version>` `--out <sbom.cdx.json>` `[--force]` | SBOM file. Exit 2 if input or I/O fails. |
+| `sbom sign` | `--sbom <sbom.cdx.json>` `--package <name>` `--version <version>` `--key <private.pem>` `--out <sbom.bundle.json>` `[--force]` | SBOM bundle. An SBOM without a valid binding is rejected with exit 2 and no bundle is written. |
+| `sbom verify` | `--sbom` `--bundle <sbom.bundle.json>` `--trust-store` `--package` `--version` `[--json]` | Verify result (Table 2.9), same order and statuses as `verify` (Table 2.8). |
+| `sbom check` | `--file <artifact>` `--bundle <release.json>` `--sbom` `--sbom-bundle` `--trust-store` `--package` `--version` `[--json]` | Combined result below. |
 
-`sbom sign` memakai alur dan kunci yang sama dengan `sign`. Nama file SBOM menjadi `artifact.name` di manifest bundle SBOM, jadi harus lolos pola `artifact.name`.
+`sbom sign` uses the same flow and keys as `sign`. The SBOM file name becomes `artifact.name` in the manifest of the SBOM bundle, so it must match the `artifact.name` pattern.
 
-## Urutan `sbom check`
+## Order of `sbom check`
 
-Berhenti di kegagalan pertama:
+Stops at the first failure:
 
-1. Verifikasi bundle rilis (Tabel 2.8). Gagal: status dari verify, `message` diawali `release:`.
-2. Verifikasi bundle SBOM dengan trust store, paket, dan versi yang sama. Gagal: status dari verify, `message` diawali `sbom:`.
-3. Baca binding SBOM. Tidak valid: `FORMAT_ERROR`.
-4. Cocokkan binding dengan manifest rilis dan masukan pengguna: SHA-256, nama artefak, paket, versi. Tidak cocok: `SBOM_MISMATCH`.
-5. Semua cocok: `OK`.
+1. Verify the release bundle (Table 2.8). On failure: the status from verify, with the `message` prefixed by `release:`.
+2. Verify the SBOM bundle with the same trust store, package, and version. On failure: the status from verify, with the `message` prefixed by `sbom:`.
+3. Read the SBOM binding. If invalid: `FORMAT_ERROR`.
+4. Compare the binding with the release manifest and the user inputs: SHA-256, artifact name, package, and version. On mismatch: `SBOM_MISMATCH`.
+5. Everything matches: `OK`.
 
-## Keluaran `sbom check --json`
+## Output of `sbom check --json`
 
-Satu objek JSON di stdout diikuti satu newline.
+A single JSON object on stdout followed by one newline.
 
-| Field | Tipe | Ketentuan |
+| Field | Type | Rule |
 |---|---|---|
-| `valid` | boolean | `true` hanya untuk status `OK`. |
-| `status` | string | Status Tabel 2.8, atau `SBOM_MISMATCH`. |
-| `message` | string | Penjelasan singkat. |
-| `release` | object/null | Hasil verify rilis (Tabel 2.9). `null` kalau belum dijalankan. |
-| `sbom` | object/null | Hasil verify SBOM (Tabel 2.9). `null` kalau belum dijalankan. |
+| `valid` | boolean | `true` only for status `OK`. |
+| `status` | string | A status from Table 2.8, or `SBOM_MISMATCH`. |
+| `message` | string | Short explanation. |
+| `release` | object/null | Release verify result (Table 2.9). `null` if it has not run. |
+| `sbom` | object/null | SBOM verify result (Table 2.9). `null` if it has not run. |
 
-Exit code: `0` untuk `OK`, `2` untuk `INPUT_ERROR`, `1` untuk status lain termasuk `SBOM_MISMATCH`.
+Exit code: `0` for `OK`, `2` for `INPUT_ERROR`, `1` for any other status including `SBOM_MISMATCH`.
 
-## Contoh
+## Example
 
 ```sh
 release-signer sbom generate --file demo-app.tar.gz --package demo-app --version 1.0.0 --out sbom.cdx.json
@@ -82,18 +82,18 @@ release-signer sbom check --file demo-app.tar.gz --bundle release.json \
   --trust-store trust.json --package demo-app --version 1.0.0 --json
 ```
 
-## Pengujian
+## Testing
 
-`make sbom-test` menjalankan `test/sbom` dan menulis `results/sbom/results.md`.
+`make sbom-test` runs `test/sbom` and writes `results/sbom/results.md`.
 
-| ID | Skenario | Hasil yang diharapkan |
+| ID | Scenario | Expected result |
 |---|---|---|
-| S01 | SBOM sah dan artefak sah (3 profil) | `OK`, exit 0 |
-| S02 | Isi SBOM diubah setelah sign | `ARTIFACT_MISMATCH`, exit 1 |
-| S03 | Artefak rilis diganti dan ditandatangani ulang secara sah, SBOM lama | `SBOM_MISMATCH`, exit 1 |
-| S04 | SBOM ditandatangani kunci yang tidak ada di trust store | `KEY_NOT_TRUSTED`, exit 1 |
-| S05 | `sbom sign` untuk SBOM tanpa hash SHA-256 | exit 2, bundle tidak ditulis |
-| S06 | Artefak rilis diubah setelah sign | `ARTIFACT_MISMATCH`, exit 1 (berhenti di verify rilis) |
-| S07 | SBOM sah tapi berisi versi lain | `SBOM_MISMATCH`, exit 1 |
-| S08 | `sbom check` tanpa flag wajib | `INPUT_ERROR`, exit 2 |
-| S09 | `sbom verify` berdiri sendiri | `OK`, exit 0 |
+| S01 | Valid SBOM and valid artifact (3 profiles) | `OK`, exit 0 |
+| S02 | SBOM content changed after signing | `ARTIFACT_MISMATCH`, exit 1 |
+| S03 | Release artifact replaced and legitimately re-signed, old SBOM | `SBOM_MISMATCH`, exit 1 |
+| S04 | SBOM signed by a key that is not in the trust store | `KEY_NOT_TRUSTED`, exit 1 |
+| S05 | `sbom sign` for an SBOM without a SHA-256 hash | exit 2, no bundle written |
+| S06 | Release artifact changed after signing | `ARTIFACT_MISMATCH`, exit 1 (stops at release verify) |
+| S07 | Valid SBOM that contains another version | `SBOM_MISMATCH`, exit 1 |
+| S08 | `sbom check` without required flags | `INPUT_ERROR`, exit 2 |
+| S09 | Standalone `sbom verify` | `OK`, exit 0 |
