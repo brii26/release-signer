@@ -1,7 +1,7 @@
 {
   "schema": "release-signer-benchmark/v1",
-  "utc": "2026-11-13T06:27:54Z",
-  "source_commit": "b5030bc0c86bd00cd4effddca964c0bc93a07c3c",
+  "utc": "2026-11-14T19:35:11Z",
+  "source_commit": "16c1e251307a88049d406a27dcf4d265baf24218",
   "source_dirty": false,
   "samples": 30,
   "warmups": 5,
@@ -35,8 +35,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "none",
       "samples": 30,
-      "median_ns": 442853481,
-      "p95_ns": 1037330727,
+      "median_ns": 148730799,
+      "p95_ns": 463339410,
       "raw_csv": "raw/keygen_rsa-pss-sha256_none.csv"
     },
     {
@@ -44,8 +44,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "none",
       "samples": 30,
-      "median_ns": 24821.5,
-      "p95_ns": 41097,
+      "median_ns": 11702.5,
+      "p95_ns": 18585,
       "raw_csv": "raw/keygen_ecdsa-p256-sha256_none.csv"
     },
     {
@@ -53,8 +53,8 @@
       "profile": "ed25519",
       "artifact": "none",
       "samples": 30,
-      "median_ns": 33773,
-      "p95_ns": 34445,
+      "median_ns": 15905,
+      "p95_ns": 16602,
       "raw_csv": "raw/keygen_ed25519_none.csv"
     },
     {
@@ -62,8 +62,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 1232,
-      "p95_ns": 1292,
+      "median_ns": 581,
+      "p95_ns": 611,
       "raw_csv": "raw/hash_rsa-pss-sha256_small.bin.csv"
     },
     {
@@ -71,8 +71,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 5179163.5,
-      "p95_ns": 5218929,
+      "median_ns": 2443739,
+      "p95_ns": 2589775,
       "raw_csv": "raw/sign_rsa-pss-sha256_small.bin.csv"
     },
     {
@@ -80,8 +80,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 221164.5,
-      "p95_ns": 287318,
+      "median_ns": 101286.5,
+      "p95_ns": 104037,
       "raw_csv": "raw/verify_rsa-pss-sha256_small.bin.csv"
     },
     {
@@ -89,8 +89,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 11754859,
-      "p95_ns": 12682272,
+      "median_ns": 5346556,
+      "p95_ns": 5662925,
       "raw_csv": "raw/e2e_sign_rsa-pss-sha256_small.bin.csv"
     },
     {
@@ -98,8 +98,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 5991019.5,
-      "p95_ns": 6805371,
+      "median_ns": 2481510.5,
+      "p95_ns": 3514092,
       "raw_csv": "raw/e2e_verify_rsa-pss-sha256_small.bin.csv"
     },
     {
@@ -107,8 +107,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 1252,
-      "p95_ns": 1523,
+      "median_ns": 711,
+      "p95_ns": 712,
       "raw_csv": "raw/hash_ecdsa-p256-sha256_small.bin.csv"
     },
     {
@@ -116,8 +116,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 57297.5,
-      "p95_ns": 77445,
+      "median_ns": 26981,
+      "p95_ns": 40246,
       "raw_csv": "raw/sign_ecdsa-p256-sha256_small.bin.csv"
     },
     {
@@ -125,8 +125,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 131240.5,
-      "p95_ns": 163827,
+      "median_ns": 60619.5,
+      "p95_ns": 75272,
       "raw_csv": "raw/verify_ecdsa-p256-sha256_small.bin.csv"
     },
     {
@@ -134,8 +134,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 6045732,
-      "p95_ns": 6857589,
+      "median_ns": 2638392.5,
+      "p95_ns": 3262307,
       "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_small.bin.csv"
     },
     {
@@ -143,8 +143,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 5698206,
-      "p95_ns": 6583686,
+      "median_ns": 2411348,
+      "p95_ns": 2905873,
       "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_small.bin.csv"
     },
     {
@@ -152,8 +152,8 @@
       "profile": "ed25519",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 1232,
-      "p95_ns": 1242,
+      "median_ns": 711,
+      "p95_ns": 712,
       "raw_csv": "raw/hash_ed25519_small.bin.csv"
     },
     {
@@ -161,8 +161,8 @@
       "profile": "ed25519",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 42079,
-      "p95_ns": 61385,
+      "median_ns": 19351.5,
+      "p95_ns": 19467,
       "raw_csv": "raw/sign_ed25519_small.bin.csv"
     },
     {
@@ -170,8 +170,8 @@
       "profile": "ed25519",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 97783.5,
-      "p95_ns": 129162,
+      "median_ns": 44735,
+      "p95_ns": 44814,
       "raw_csv": "raw/verify_ed25519_small.bin.csv"
     },
     {
@@ -179,8 +179,8 @@
       "profile": "ed25519",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 7880120,
-      "p95_ns": 9298352,
+      "median_ns": 3513281,
+      "p95_ns": 4168239,
       "raw_csv": "raw/e2e_sign_ed25519_small.bin.csv"
     },
     {
@@ -188,8 +188,8 @@
       "profile": "ed25519",
       "artifact": "small.bin",
       "samples": 30,
-      "median_ns": 6080528,
-      "p95_ns": 6941356,
+      "median_ns": 2630096.5,
+      "p95_ns": 3194328,
       "raw_csv": "raw/e2e_verify_ed25519_small.bin.csv"
     },
     {
@@ -197,8 +197,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 1071503,
-      "p95_ns": 1232149,
+      "median_ns": 490692.5,
+      "p95_ns": 506447,
       "raw_csv": "raw/hash_rsa-pss-sha256_medium.bin.csv"
     },
     {
@@ -206,8 +206,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 5198866,
-      "p95_ns": 5465941,
+      "median_ns": 2390358.5,
+      "p95_ns": 2908518,
       "raw_csv": "raw/sign_rsa-pss-sha256_medium.bin.csv"
     },
     {
@@ -215,8 +215,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 221194.5,
-      "p95_ns": 247784,
+      "median_ns": 181443,
+      "p95_ns": 279137,
       "raw_csv": "raw/verify_rsa-pss-sha256_medium.bin.csv"
     },
     {
@@ -224,8 +224,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 13844835.5,
-      "p95_ns": 15370860,
+      "median_ns": 6041690,
+      "p95_ns": 7980655,
       "raw_csv": "raw/e2e_sign_rsa-pss-sha256_medium.bin.csv"
     },
     {
@@ -233,8 +233,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 7481257.5,
-      "p95_ns": 8454863,
+      "median_ns": 3180687,
+      "p95_ns": 3553878,
       "raw_csv": "raw/e2e_verify_rsa-pss-sha256_medium.bin.csv"
     },
     {
@@ -242,8 +242,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 1065992.5,
-      "p95_ns": 1098879,
+      "median_ns": 482272,
+      "p95_ns": 489375,
       "raw_csv": "raw/hash_ecdsa-p256-sha256_medium.bin.csv"
     },
     {
@@ -251,8 +251,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 58540,
-      "p95_ns": 81553,
+      "median_ns": 26425,
+      "p95_ns": 31760,
       "raw_csv": "raw/sign_ecdsa-p256-sha256_medium.bin.csv"
     },
     {
@@ -260,8 +260,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 130965,
-      "p95_ns": 144762,
+      "median_ns": 60043,
+      "p95_ns": 65003,
       "raw_csv": "raw/verify_ecdsa-p256-sha256_medium.bin.csv"
     },
     {
@@ -269,8 +269,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 7573569.5,
-      "p95_ns": 8287858,
+      "median_ns": 3228307.5,
+      "p95_ns": 4366514,
       "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_medium.bin.csv"
     },
     {
@@ -278,8 +278,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 7194400.5,
-      "p95_ns": 8476533,
+      "median_ns": 3155875.5,
+      "p95_ns": 3556463,
       "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_medium.bin.csv"
     },
     {
@@ -287,8 +287,8 @@
       "profile": "ed25519",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 1065060.5,
-      "p95_ns": 1152610,
+      "median_ns": 487787,
+      "p95_ns": 617868,
       "raw_csv": "raw/hash_ed25519_medium.bin.csv"
     },
     {
@@ -296,8 +296,8 @@
       "profile": "ed25519",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 42034,
-      "p95_ns": 42600,
+      "median_ns": 19237,
+      "p95_ns": 25679,
       "raw_csv": "raw/sign_ed25519_medium.bin.csv"
     },
     {
@@ -305,8 +305,8 @@
       "profile": "ed25519",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 97513,
-      "p95_ns": 116047,
+      "median_ns": 44995,
+      "p95_ns": 56286,
       "raw_csv": "raw/verify_ed25519_medium.bin.csv"
     },
     {
@@ -314,8 +314,8 @@
       "profile": "ed25519",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 9977886,
-      "p95_ns": 10915933,
+      "median_ns": 4098432,
+      "p95_ns": 5018906,
       "raw_csv": "raw/e2e_sign_ed25519_medium.bin.csv"
     },
     {
@@ -323,8 +323,8 @@
       "profile": "ed25519",
       "artifact": "medium.bin",
       "samples": 30,
-      "median_ns": 7587858,
-      "p95_ns": 8520846,
+      "median_ns": 3539471,
+      "p95_ns": 4295299,
       "raw_csv": "raw/e2e_verify_ed25519_medium.bin.csv"
     },
     {
@@ -332,8 +332,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 106697445,
-      "p95_ns": 106948021,
+      "median_ns": 48164961,
+      "p95_ns": 106539759,
       "raw_csv": "raw/hash_rsa-pss-sha256_large.bin.csv"
     },
     {
@@ -341,8 +341,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 5190616,
-      "p95_ns": 5240629,
+      "median_ns": 5188122,
+      "p95_ns": 5255744,
       "raw_csv": "raw/sign_rsa-pss-sha256_large.bin.csv"
     },
     {
@@ -350,8 +350,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 229104.5,
-      "p95_ns": 287970,
+      "median_ns": 266804.5,
+      "p95_ns": 291080,
       "raw_csv": "raw/verify_rsa-pss-sha256_large.bin.csv"
     },
     {
@@ -359,8 +359,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 146311298.5,
-      "p95_ns": 149439730,
+      "median_ns": 142574966.5,
+      "p95_ns": 145125211,
       "raw_csv": "raw/e2e_sign_rsa-pss-sha256_large.bin.csv"
     },
     {
@@ -368,8 +368,8 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 80617391.5,
-      "p95_ns": 85581113,
+      "median_ns": 144072660,
+      "p95_ns": 148010694,
       "raw_csv": "raw/e2e_verify_rsa-pss-sha256_large.bin.csv"
     },
     {
@@ -377,8 +377,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 72010013.5,
-      "p95_ns": 106940538,
+      "median_ns": 47905242,
+      "p95_ns": 106618552,
       "raw_csv": "raw/hash_ecdsa-p256-sha256_large.bin.csv"
     },
     {
@@ -386,8 +386,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 56601,
-      "p95_ns": 67967,
+      "median_ns": 26174.5,
+      "p95_ns": 35878,
       "raw_csv": "raw/sign_ecdsa-p256-sha256_large.bin.csv"
     },
     {
@@ -395,8 +395,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 131116,
-      "p95_ns": 140403,
+      "median_ns": 58495.5,
+      "p95_ns": 59864,
       "raw_csv": "raw/verify_ecdsa-p256-sha256_large.bin.csv"
     },
     {
@@ -404,8 +404,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 141084210,
-      "p95_ns": 145192709,
+      "median_ns": 68170967.5,
+      "p95_ns": 69831146,
       "raw_csv": "raw/e2e_sign_ecdsa-p256-sha256_large.bin.csv"
     },
     {
@@ -413,8 +413,8 @@
       "profile": "ecdsa-p256-sha256",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 81091713.5,
-      "p95_ns": 92835926,
+      "median_ns": 77075088.5,
+      "p95_ns": 87095933,
       "raw_csv": "raw/e2e_verify_ecdsa-p256-sha256_large.bin.csv"
     },
     {
@@ -422,8 +422,8 @@
       "profile": "ed25519",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 48760167.5,
-      "p95_ns": 49408248,
+      "median_ns": 49317437,
+      "p95_ns": 51225249,
       "raw_csv": "raw/hash_ed25519_large.bin.csv"
     },
     {
@@ -431,8 +431,8 @@
       "profile": "ed25519",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 18975.5,
-      "p95_ns": 19367,
+      "median_ns": 18675,
+      "p95_ns": 19226,
       "raw_csv": "raw/sign_ed25519_large.bin.csv"
     },
     {
@@ -440,8 +440,8 @@
       "profile": "ed25519",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 44839,
-      "p95_ns": 45004,
+      "median_ns": 44073.5,
+      "p95_ns": 44264,
       "raw_csv": "raw/verify_ed25519_large.bin.csv"
     },
     {
@@ -449,8 +449,8 @@
       "profile": "ed25519",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 142247800,
-      "p95_ns": 145693822,
+      "median_ns": 104291005.5,
+      "p95_ns": 139692007,
       "raw_csv": "raw/e2e_sign_ed25519_large.bin.csv"
     },
     {
@@ -458,8 +458,8 @@
       "profile": "ed25519",
       "artifact": "large.bin",
       "samples": 30,
-      "median_ns": 83891974,
-      "p95_ns": 137570977,
+      "median_ns": 76942581.5,
+      "p95_ns": 79041175,
       "raw_csv": "raw/e2e_verify_ed25519_large.bin.csv"
     }
   ],
@@ -468,7 +468,7 @@
       "profile": "rsa-pss-sha256",
       "artifact": "small.bin",
       "public_spki_der_bytes": 422,
-      "private_pkcs8_der_bytes": 1793,
+      "private_pkcs8_der_bytes": 1794,
       "signature_bytes": 384,
       "bundle_file_bytes": 994
     },
@@ -492,7 +492,7 @@
       "profile": "rsa-pss-sha256",
       "artifact": "medium.bin",
       "public_spki_der_bytes": 422,
-      "private_pkcs8_der_bytes": 1793,
+      "private_pkcs8_der_bytes": 1794,
       "signature_bytes": 384,
       "bundle_file_bytes": 998
     },
@@ -516,7 +516,7 @@
       "profile": "rsa-pss-sha256",
       "artifact": "large.bin",
       "public_spki_der_bytes": 422,
-      "private_pkcs8_der_bytes": 1793,
+      "private_pkcs8_der_bytes": 1794,
       "signature_bytes": 384,
       "bundle_file_bytes": 998
     },
