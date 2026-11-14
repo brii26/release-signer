@@ -1,10 +1,10 @@
-total 24
-drwxr-xr-x 2 darrel darrel 180 Nov 14 19:27 .
-drwx------ 5 darrel darrel 100 Nov 14 19:27 ..
--rw-r--r-- 1 darrel darrel 113 Nov 14 19:27 ephemeral.pub.pem
--rw-r--r-- 1 darrel darrel   7 Nov 14 19:27 exit_code.txt
--rw-r--r-- 1 darrel darrel   0 Nov 14 19:27 ls_out.txt
--rw------- 1 darrel darrel 562 Nov 14 19:27 rilis.json
--rw------- 1 darrel darrel 369 Nov 14 19:27 trust.json
--rw-r--r-- 1 darrel darrel 209 Nov 14 19:27 uid_check.txt
--rw-r--r-- 1 darrel darrel 209 Nov 14 19:27 verification.json
+total 32
+drwxr-xr-x  2 runner runner 4096 Nov 14 19:39 .
+drwxr-xr-x 15 runner runner 4096 Nov 14 19:39 ..
+-rw-r--r--  1 runner runner  113 Nov 14 19:39 ephemeral.pub.pem
+-rw-r--r--  1 runner runner    7 Nov 14 19:39 exit_code.txt
+-rw-r--r--  1 runner runner    0 Nov 14 19:39 ls_out.txt
+-rw-------  1 runner runner  562 Nov 14 19:39 rilis.json
+-rw-------  1 runner runner  369 Nov 14 19:39 trust.json
+-rw-r--r--  1 runner runner  182 Nov 14 19:39 uid_check.txt
+-rw-r--r--  1 runner runner  209 Nov 14 19:39 verification.json
