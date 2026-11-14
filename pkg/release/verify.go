@@ -23,8 +23,10 @@ import (
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
+// Status is the outcome of a verification (Table 2.8).
 type Status string
 
+// Verification statuses, in the order the checks run.
 const (
 	StatusInputError           Status = "INPUT_ERROR"
 	StatusFormatError          Status = "FORMAT_ERROR"
@@ -36,12 +38,14 @@ const (
 	StatusOK                   Status = "OK"
 )
 
+// Profile names as they appear in the manifest algorithm field.
 const (
 	ProfileRSAPSS  = "rsa-pss-sha256"
 	ProfileECDSA   = "ecdsa-p256-sha256"
 	ProfileEd25519 = "ed25519"
 )
 
+// Size limits in bytes for the files Verify reads.
 const (
 	MaxBundleSize     = 64 * 1024   // 64 KiB
 	MaxManifestSize   = 16 * 1024   // 16 KiB
@@ -53,6 +57,9 @@ var (
 	hex64Regex   = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
+// Result is the verification result (Table 2.9). Algorithm, KeyID, Package, and Version
+// are nil until the manifest could be read. When Valid is false they only explain the
+// failure and must not be treated as trusted data.
 type Result struct {
 	Valid     bool    `json:"valid"`
 	Status    Status  `json:"status"`
@@ -63,6 +70,7 @@ type Result struct {
 	Version   *string `json:"version"`
 }
 
+// ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT_ERROR, 1 otherwise.
 func (r Result) ExitCode() int {
 	if r.Status == StatusOK {
 		return 0
@@ -73,6 +81,7 @@ func (r Result) ExitCode() int {
 	return 1
 }
 
+// VerifyInput is the input of Verify. Package and Version are the values the user expects.
 type VerifyInput struct {
 	ArtifactPath   string
 	BundlePath     string

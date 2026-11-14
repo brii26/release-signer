@@ -11,11 +11,13 @@ import (
 	"unicode/utf8"
 )
 
+// MaxSafeInt is 2^53 - 1, the largest integer AsSafeInt accepts.
 const MaxSafeInt = 9007199254740991
 
 // Batas nesting supaya input jahat tidak menghabiskan stack.
 const maxDepth = 64
 
+// Errors returned by Parse and the As* helpers. Callers match them with errors.Is.
 var (
 	ErrDuplicateKey = errors.New("duplicate key")
 	ErrTooLarge     = errors.New("input too large")
@@ -27,8 +29,10 @@ var (
 	ErrTooDeep      = errors.New("json nesting too deep")
 )
 
+// Kind is the JSON type of a Value.
 type Kind int
 
+// The JSON value kinds.
 const (
 	Object Kind = iota
 	Array
@@ -38,6 +42,7 @@ const (
 	Null
 )
 
+// String returns the lowercase JSON type name of k.
 func (k Kind) String() string {
 	switch k {
 	case Object:
@@ -56,11 +61,13 @@ func (k Kind) String() string {
 	return "unknown"
 }
 
+// Member is one key/value pair of an object. Members keep their source order.
 type Member struct {
 	Key string
 	Val Value
 }
 
+// Value is a parsed JSON value. Only the field matching Kind is meaningful.
 type Value struct {
 	Kind Kind
 	Str  string
@@ -170,6 +177,7 @@ func parseArray(dec *json.Decoder, depth int) (Value, error) {
 	return v, nil
 }
 
+// Field returns the member named key (exact, case-sensitive match) of an object.
 func (v Value) Field(key string) (Value, bool) {
 	if v.Kind != Object {
 		return Value{}, false
@@ -182,6 +190,7 @@ func (v Value) Field(key string) (Value, bool) {
 	return Value{}, false
 }
 
+// ExpectKeys requires v to be an object with exactly the given keys: no extra and no missing key.
 func ExpectKeys(v Value, keys ...string) error {
 	if v.Kind != Object {
 		return fmt.Errorf("%w: want object, got %s", ErrType, v.Kind)
@@ -203,6 +212,7 @@ func ExpectKeys(v Value, keys ...string) error {
 	return nil
 }
 
+// AsString returns the string held by v, or an ErrType error for any other kind (including null).
 func AsString(v Value) (string, error) {
 	if v.Kind != String {
 		return "", fmt.Errorf("%w: want string, got %s", ErrType, v.Kind)
@@ -210,6 +220,7 @@ func AsString(v Value) (string, error) {
 	return v.Str, nil
 }
 
+// AsArray returns the elements of v, or an ErrType error if v is not an array.
 func AsArray(v Value) ([]Value, error) {
 	if v.Kind != Array {
 		return nil, fmt.Errorf("%w: want array, got %s", ErrType, v.Kind)
