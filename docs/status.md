@@ -1,28 +1,28 @@
-# Status dan exit code
+# Status and exit codes
 
-## Urutan pemeriksaan `verify`
+## Order of `verify` checks
 
-Berhenti di kegagalan pertama.
+Stops at the first failure.
 
-| No | Status jika gagal | Pemeriksaan |
+| No | Status on failure | Check |
 |---|---|---|
-| 1 | `INPUT_ERROR` | Opsi wajib ada, `--package` valid, semua berkas masukan bisa dibaca. |
-| 2 | `FORMAT_ERROR` | Struktur, tipe, ukuran, dan serialisasi bundle, manifest, dan trust store. Base64 valid. Kunci di trust store valid dan fingerprint-nya cocok. |
-| 3 | `UNSUPPORTED_ALGORITHM` | `algorithm` di manifest adalah salah satu dari tiga profil. |
-| 4 | `KEY_NOT_TRUSTED` | Trust store memuat `keyid`, profil kunci sama dengan manifest, dan kunci diizinkan untuk paket yang diharapkan. |
-| 5 | `INVALID_SIGNATURE` | Signature atas byte manifest sah. Panjang atau encoding signature yang salah juga di sini. |
-| 6 | `METADATA_MISMATCH` | Paket dan versi di manifest sama persis dengan masukan. `artifact.name` sama dengan basename berkas. |
-| 7 | `ARTIFACT_MISMATCH` | Ukuran dan SHA-256 berkas sama dengan manifest. |
-| 8 | `OK` | Semua pemeriksaan lolos. |
+| 1 | `INPUT_ERROR` | Required options are present, `--package` is valid, and every input file is readable. |
+| 2 | `FORMAT_ERROR` | Structure, types, size, and serialization of the bundle, manifest, and trust store. Base64 is valid. Trust store keys are valid and their fingerprints match. |
+| 3 | `UNSUPPORTED_ALGORITHM` | `algorithm` in the manifest is one of the three profiles. |
+| 4 | `KEY_NOT_TRUSTED` | The trust store contains the `keyid`, the key profile equals the manifest profile, and the key is allowed for the expected package. |
+| 5 | `INVALID_SIGNATURE` | The signature over the manifest bytes is valid. A wrong signature length or encoding also lands here. |
+| 6 | `METADATA_MISMATCH` | Package and version in the manifest equal the inputs exactly. `artifact.name` equals the file basename. |
+| 7 | `ARTIFACT_MISMATCH` | File size and SHA-256 equal the manifest. |
+| 8 | `OK` | All checks pass. |
 
-`sbom check` menambah satu status: `SBOM_MISMATCH` (kedua bundle sah, tapi SBOM tidak terikat ke rilis).
+`sbom check` adds one status: `SBOM_MISMATCH` (both bundles are valid, but the SBOM is not bound to the release).
 
-## Exit code
+## Exit codes
 
-| Kode | Arti |
+| Code | Meaning |
 |---|---|
-| 0 | Berhasil. Untuk `verify`: status `OK` dan `valid` bernilai `true`. |
-| 1 | Verifikasi ditolak (semua status selain `OK` dan `INPUT_ERROR`). |
-| 2 | Kesalahan pemakaian, I/O, atau lingkungan. Untuk `verify --json` statusnya `INPUT_ERROR`. Semua perintah selain `verify` yang gagal juga memakai kode ini. |
+| 0 | Success. For `verify`: status `OK` and `valid` is `true`. |
+| 1 | Verification rejected (every status except `OK` and `INPUT_ERROR`). |
+| 2 | Usage, I/O, or environment error. For `verify --json` the status is `INPUT_ERROR`. Every command other than `verify` that fails also uses this code. |
 
-Pipeline sebaiknya menilai penerimaan artefak dari exit code, lalu `valid` dan `status` di JSON sebagai konfirmasi. Jangan mengabaikan exit code non-zero dengan `|| true` atau `continue-on-error`.
+A pipeline should decide whether to accept an artifact from the exit code, then use `valid` and `status` in the JSON as confirmation. Do not ignore a non-zero exit code with `|| true` or `continue-on-error`.

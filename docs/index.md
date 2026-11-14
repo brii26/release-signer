@@ -1,39 +1,39 @@
 # release-signer API
 
-`release-signer` menandatangani dan memverifikasi software release dengan RSA-PSS, ECDSA P-256, dan Ed25519. Dokumentasi ini mencakup dua "API" yang bisa dipakai:
+`release-signer` signs and verifies software releases with RSA-PSS, ECDSA P-256, and Ed25519. This documentation covers two "APIs" you can use:
 
-- **Modul Go** di `pkg/...`, dipakai oleh CLI dan bisa diimpor langsung oleh program Go lain.
-- **CLI**, yang dipakai pipeline CI/CD lewat image container. Stdout, stderr, dan exit code adalah kontraknya.
+- **Go modules** under `pkg/...`, used by the CLI and importable by other Go programs.
+- **The CLI**, used by CI/CD pipelines through the container image. Stdout, stderr, and the exit code are its contract.
 
-## Alur singkat
+## Overview
 
 ```text
-artefak --hash--> manifest (canonical JSON) --sign--> bundle (manifest + signature, Base64)
-bundle + artefak + trust store + (package, version yang diharapkan) --verify--> status + exit code
+artifact --hash--> manifest (canonical JSON) --sign--> bundle (manifest + signature, Base64)
+bundle + artifact + trust store + (expected package, version) --verify--> status + exit code
 ```
 
-Tanda tangan hanya membuktikan keaslian dan integritas. Ini bukan jaminan software bebas malware atau kerentanan.
+A signature only proves authenticity and integrity. It is not a guarantee that the software is free of malware or vulnerabilities.
 
-## Peta modul
+## Module map
 
-| Package | Tugas | Fungsi utama |
+| Package | Purpose | Main functions |
 |---|---|---|
-| [`pkg/profile`](api/pkg/profile.md) | Nama profil algoritma dan panjang signature | `Parse`, `SignatureLen` |
-| [`pkg/keys`](api/pkg/keys.md) | Keygen, PEM PKCS#8 dan SPKI, keyid | `Generate`, `ParsePrivatePEM`, `KeyID` |
-| [`pkg/sigalg`](api/pkg/sigalg.md) | Sign dan verify per profil | `Sign`, `Verify` |
-| [`pkg/strictjson`](api/pkg/strictjson.md) | Parser JSON yang menolak duplicate key | `Parse`, `ExpectKeys` |
-| [`pkg/b64`](api/pkg/b64.md) | Base64 RFC 4648 yang ketat | `Encode`, `DecodeStrict` |
-| [`pkg/manifest`](api/pkg/manifest.md) | Release manifest canonical | `New`, `Canonical`, `ParseStrict` |
-| [`pkg/bundle`](api/pkg/bundle.md) | Bundle JSON (manifest + signature) | `Build`, `ParseStrict`, `WriteFile` |
-| [`pkg/truststore`](api/pkg/truststore.md) | Trust store per paket, simpan atomik | `Load`, `Add`, `Remove`, `Save` |
-| [`pkg/release`](api/pkg/release.md) | Alur sign, verify, dan SBOM | `Sign`, `Verify`, `SBOMCheck` |
-| [`pkg/sbom`](api/pkg/sbom.md) | SBOM CycloneDX yang terikat ke SHA-256 artefak | `Generate`, `ParseBinding` |
+| [`pkg/profile`](api/pkg/profile.md) | Algorithm profile names and signature lengths | `Parse`, `SignatureLen` |
+| [`pkg/keys`](api/pkg/keys.md) | Keygen, PEM PKCS#8 and SPKI, keyid | `Generate`, `ParsePrivatePEM`, `KeyID` |
+| [`pkg/sigalg`](api/pkg/sigalg.md) | Sign and verify per profile | `Sign`, `Verify` |
+| [`pkg/strictjson`](api/pkg/strictjson.md) | JSON parser that rejects duplicate keys | `Parse`, `ExpectKeys` |
+| [`pkg/b64`](api/pkg/b64.md) | Strict RFC 4648 Base64 | `Encode`, `DecodeStrict` |
+| [`pkg/manifest`](api/pkg/manifest.md) | Canonical release manifest | `New`, `Canonical`, `ParseStrict` |
+| [`pkg/bundle`](api/pkg/bundle.md) | JSON bundle (manifest + signature) | `Build`, `ParseStrict`, `WriteFile` |
+| [`pkg/truststore`](api/pkg/truststore.md) | Per-package trust store, atomic save | `Load`, `Add`, `Remove`, `Save` |
+| [`pkg/release`](api/pkg/release.md) | Sign, verify, and SBOM flow | `Sign`, `Verify`, `SBOMCheck` |
+| [`pkg/sbom`](api/pkg/sbom.md) | CycloneDX SBOM bound to the artifact SHA-256 | `Generate`, `ParseBinding` |
 
-Referensi tiap package dibuat otomatis dari doc comment dengan [gomarkdoc](https://github.com/princjef/gomarkdoc). Cara pakai lengkap ada di [Contoh penggunaan](examples.md), format data di [Format data](formats.md), dan status serta exit code di [Status dan exit code](status.md).
+The reference for each package is generated from doc comments with [gomarkdoc](https://github.com/princjef/gomarkdoc). For usage see [Examples](examples.md), for data formats see [Data formats](formats.md), and for statuses and exit codes see [Status and exit codes](status.md).
 
-## Konvensi
+## Conventions
 
-- Semua string yang ditandatangani atau dibandingkan adalah ASCII. Hash dan keyid ditulis heksadesimal huruf kecil.
-- Manifest yang ditandatangani adalah byte persis hasil `Canonical()`. Verifikasi memakai byte manifest yang ada di bundle, bukan hasil serialisasi ulang.
-- Setiap fungsi parse bersifat strict: field duplikat, field tambahan, `null`, dan tipe yang salah ditolak.
-- Fungsi `Verify` berhenti di kegagalan pertama dan tidak pernah mencoba kunci, profil, atau trust store lain.
+- Every string that is signed or compared is ASCII. Hashes and keyids are lowercase hexadecimal.
+- The signed manifest is the exact byte output of `Canonical()`. Verification uses the manifest bytes stored in the bundle, not a re-serialized copy.
+- Every parse function is strict: duplicate fields, extra fields, `null`, and wrong types are rejected.
+- `Verify` stops at the first failure and never tries another key, profile, or trust store.
