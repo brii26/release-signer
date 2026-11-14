@@ -39,6 +39,7 @@ func SBOMVerify(in VerifyInput) Result {
 	return Verify(in)
 }
 
+// CheckInput is the input of SBOMCheck. Package and Version are the values the user expects.
 type CheckInput struct {
 	ArtifactPath   string
 	ReleaseBundle  string
@@ -59,6 +60,7 @@ type CheckResult struct {
 	SBOM    *Result `json:"sbom"`
 }
 
+// ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT_ERROR, 1 otherwise.
 func (r CheckResult) ExitCode() int {
 	switch r.Status {
 	case StatusOK:

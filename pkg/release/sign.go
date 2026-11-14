@@ -17,8 +17,10 @@ import (
 	"github.com/brii26/release-signer/pkg/sigalg"
 )
 
+// ErrInput wraps every Sign failure caused by input, I/O, or environment (exit code 2).
 var ErrInput = errors.New("input error")
 
+// SignInput is the input of Sign. The profile comes from the private key at KeyPath.
 type SignInput struct {
 	ArtifactPath string
 	Package      string
@@ -28,6 +30,7 @@ type SignInput struct {
 	Force        bool
 }
 
+// SignOutput reports what Sign produced: keyid, profile, the signed manifest bytes, and the bundle path.
 type SignOutput struct {
 	KeyID      string
 	Profile    profile.Profile
@@ -35,6 +38,8 @@ type SignOutput struct {
 	BundlePath string
 }
 
+// Sign reads the artifact, builds and signs its manifest, and writes the bundle to OutPath.
+// The artifact is only read, never modified or executed. Errors wrap ErrInput.
 func Sign(in SignInput) (SignOutput, error) {
 	keyPEM, err := os.ReadFile(in.KeyPath)
 	if err != nil {

@@ -1,7 +1,7 @@
 VERSION ?= dev
 BIN := bin/release-signer
 
-.PHONY: build test vet fmt-check scenarios sbom-test interop bench docker
+.PHONY: build test vet fmt-check scenarios sbom-test docs-api docs interop bench docker
 
 build:
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BIN) ./cmd/release-signer
@@ -20,6 +20,12 @@ scenarios:
 
 sbom-test:
 	RESULTS_DIR=results/sbom go test ./test/sbom -count=1 -v
+
+docs-api:
+	go run github.com/princjef/gomarkdoc/cmd/gomarkdoc@v1.1.0 --output 'docs/api/{{.Dir}}.md' ./pkg/...
+
+docs: docs-api
+	mkdocs build --strict
 
 interop:
 	sh test/interop/run.sh
