@@ -1,7 +1,7 @@
 VERSION ?= dev
 BIN := bin/release-signer
 
-.PHONY: build test vet fmt-check scenarios interop bench docker
+.PHONY: build test vet fmt-check scenarios sbom-test interop bench docker
 
 build:
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BIN) ./cmd/release-signer
@@ -17,6 +17,9 @@ fmt-check:
 
 scenarios:
 	RESULTS_DIR=results/scenarios go test ./test/e2e -run TestScenarios -v
+
+sbom-test:
+	RESULTS_DIR=results/sbom go test ./test/sbom -count=1 -v
 
 interop:
 	sh test/interop/run.sh

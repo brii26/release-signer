@@ -1,0 +1,112 @@
+[
+  {
+    "id": "S01",
+    "profile": "ecdsa-p256-sha256",
+    "input": "SBOM dan artefak sah",
+    "expected_status": "OK",
+    "expected_exit": 0,
+    "actual_status": "OK",
+    "actual_exit": 0,
+    "result": "PASS"
+  },
+  {
+    "id": "S01",
+    "profile": "ed25519",
+    "input": "SBOM dan artefak sah",
+    "expected_status": "OK",
+    "expected_exit": 0,
+    "actual_status": "OK",
+    "actual_exit": 0,
+    "result": "PASS"
+  },
+  {
+    "id": "S01",
+    "profile": "rsa-pss-sha256",
+    "input": "SBOM dan artefak sah",
+    "expected_status": "OK",
+    "expected_exit": 0,
+    "actual_status": "OK",
+    "actual_exit": 0,
+    "result": "PASS"
+  },
+  {
+    "id": "S02",
+    "profile": "ed25519",
+    "input": "SBOM ditambah 1 byte setelah sign",
+    "expected_status": "ARTIFACT_MISMATCH",
+    "expected_exit": 1,
+    "actual_status": "ARTIFACT_MISMATCH",
+    "actual_exit": 1,
+    "result": "PASS"
+  },
+  {
+    "id": "S03",
+    "profile": "ed25519",
+    "input": "artefak diganti dan ditandatangani ulang, SBOM lama",
+    "expected_status": "SBOM_MISMATCH",
+    "expected_exit": 1,
+    "actual_status": "SBOM_MISMATCH",
+    "actual_exit": 1,
+    "result": "PASS"
+  },
+  {
+    "id": "S04",
+    "profile": "ed25519",
+    "input": "SBOM ditandatangani kunci di luar trust store",
+    "expected_status": "KEY_NOT_TRUSTED",
+    "expected_exit": 1,
+    "actual_status": "KEY_NOT_TRUSTED",
+    "actual_exit": 1,
+    "result": "PASS"
+  },
+  {
+    "id": "S05",
+    "profile": "ed25519",
+    "input": "sbom sign tanpa hash SHA-256",
+    "expected_status": "(exit 2, tanpa bundle)",
+    "expected_exit": 2,
+    "actual_status": "",
+    "actual_exit": 2,
+    "result": "PASS"
+  },
+  {
+    "id": "S06",
+    "profile": "ed25519",
+    "input": "artefak rilis diubah setelah sign",
+    "expected_status": "ARTIFACT_MISMATCH",
+    "expected_exit": 1,
+    "actual_status": "ARTIFACT_MISMATCH",
+    "actual_exit": 1,
+    "result": "PASS"
+  },
+  {
+    "id": "S07",
+    "profile": "ed25519",
+    "input": "SBOM berisi versi 2.0.0, diverifikasi sebagai 1.0.0",
+    "expected_status": "SBOM_MISMATCH",
+    "expected_exit": 1,
+    "actual_status": "SBOM_MISMATCH",
+    "actual_exit": 1,
+    "result": "PASS"
+  },
+  {
+    "id": "S08",
+    "profile": "-",
+    "input": "sbom check tanpa flag wajib",
+    "expected_status": "INPUT_ERROR",
+    "expected_exit": 2,
+    "actual_status": "INPUT_ERROR",
+    "actual_exit": 2,
+    "result": "PASS"
+  },
+  {
+    "id": "S09",
+    "profile": "ecdsa-p256-sha256",
+    "input": "sbom verify sah",
+    "expected_status": "OK",
+    "expected_exit": 0,
+    "actual_status": "OK",
+    "actual_exit": 0,
+    "result": "PASS"
+  }
+]
