@@ -19,8 +19,7 @@ import (
 	"github.com/brii26/release-signer/pkg/profile"
 )
 
-// Generate creates a key pair for profile p using crypto/rand: RSA 3072 bit (e = 65537),
-// ECDSA P-256, or Ed25519. It returns an error for an unknown profile.
+// Generate bikin key pair untuk profile p (RSA 3072 e=65537, ECDSA P-256, atau Ed25519).
 func Generate(p profile.Profile) (crypto.Signer, error) {
 	switch p {
 	case profile.RSAPSS:
@@ -35,7 +34,7 @@ func Generate(p profile.Profile) (crypto.Signer, error) {
 	}
 }
 
-// MarshalPrivatePEM encodes k as PKCS#8 in a PEM block labelled "PRIVATE KEY".
+// MarshalPrivatePEM encode k jadi PKCS#8 PEM.
 func MarshalPrivatePEM(k crypto.Signer) ([]byte, error) {
 	der, err := x509.MarshalPKCS8PrivateKey(k)
 	if err != nil {
@@ -48,7 +47,7 @@ func MarshalPrivatePEM(k crypto.Signer) ([]byte, error) {
 	return pem.EncodeToMemory(block), nil
 }
 
-// MarshalPublicPEM encodes pub as SubjectPublicKeyInfo in a PEM block labelled "PUBLIC KEY".
+// MarshalPublicPEM encode pub jadi SPKI PEM.
 func MarshalPublicPEM(pub crypto.PublicKey) ([]byte, error) {
 	der, err := x509.MarshalPKIXPublicKey(pub)
 	if err != nil {
@@ -61,8 +60,7 @@ func MarshalPublicPEM(pub crypto.PublicKey) ([]byte, error) {
 	return pem.EncodeToMemory(block), nil
 }
 
-// ParsePrivatePEM parses a PKCS#8 "PRIVATE KEY" PEM and returns the signer and its
-// profile. Keys whose type or parameters do not match a supported profile are rejected.
+// ParsePrivatePEM parse PKCS#8 PEM, return signer dan profile, tipe atau parameter tak didukung ditolak.
 func ParsePrivatePEM(data []byte) (crypto.Signer, profile.Profile, error) {
 	block, err := decodePEM(data, "PRIVATE KEY")
 	if err != nil {
@@ -84,8 +82,7 @@ func ParsePrivatePEM(data []byte) (crypto.Signer, profile.Profile, error) {
 	return signer, p, nil
 }
 
-// ParsePublicPEM parses an SPKI "PUBLIC KEY" PEM and returns the key and its profile.
-// Keys whose type or parameters do not match a supported profile are rejected.
+// ParsePublicPEM parse SPKI PEM, return key dan profile, tipe atau parameter tak didukung ditolak.
 func ParsePublicPEM(data []byte) (crypto.PublicKey, profile.Profile, error) {
 	block, err := decodePEM(data, "PUBLIC KEY")
 	if err != nil {
@@ -117,8 +114,7 @@ func decodePEM(data []byte, expectedType string) (*pem.Block, error) {
 	return block, nil
 }
 
-// ProfileOf returns the profile of pub after checking its parameters: RSA must be
-// 3072 bit with e = 65537, ECDSA must use P-256, and Ed25519 is accepted as is.
+// ProfileOf cek parameter pub: RSA 3072 bit e=65537, ECDSA P-256, Ed25519 apa adanya.
 func ProfileOf(pub crypto.PublicKey) (profile.Profile, error) {
 	if pub == nil {
 		return "", errors.New("public key is nil")
@@ -147,8 +143,7 @@ func ProfileOf(pub crypto.PublicKey) (profile.Profile, error) {
 	}
 }
 
-// KeyID returns hex_lower(SHA-256(DER SPKI)) of pub. The DER is re-exported from the key,
-// so PEM line endings and line wrapping never change the result.
+// KeyID return hex_lower(SHA-256(DER SPKI)), DER di-export ulang, jadi format PEM tidak berpengaruh.
 func KeyID(pub crypto.PublicKey) (string, error) {
 	if pub == nil {
 		return "", errors.New("public key is nil")
@@ -164,8 +159,7 @@ func KeyID(pub crypto.PublicKey) (string, error) {
 	return hex.EncodeToString(h[:]), nil
 }
 
-// WriteKeyPair writes <prefix>.key.pem (mode 0600) and <prefix>.pub.pem (mode 0644) and
-// returns both paths. Existing files are only overwritten when force is true.
+// WriteKeyPair tulis <prefix>.key.pem (0600) dan <prefix>.pub.pem (0644), overwrite hanya kalau force.
 func WriteKeyPair(prefix string, k crypto.Signer, force bool) (privPath, pubPath string, err error) {
 	flags := os.O_WRONLY | os.O_CREATE
 	if !force {

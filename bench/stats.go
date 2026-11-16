@@ -12,7 +12,7 @@ type statistics struct {
 	P95NS    int64   `json:"p95_ns"`
 }
 
-// summarize copies the samples: raw CSVs retain their measurement order.
+// summarize copy samples supaya urutan ukur di raw CSV tetap.
 func summarize(samples []int64) (statistics, error) {
 	if len(samples) == 0 {
 		return statistics{}, errors.New("cannot summarize empty samples")

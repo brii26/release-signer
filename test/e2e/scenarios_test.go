@@ -374,9 +374,7 @@ func writeResults(dir string) {
 }
 
 func TestScenarios(t *testing.T) {
-	// =========================================================================
-	// each profile against every fixture
-	// =========================================================================
+	// tiap profile terhadap semua fixture
 	profiles := []string{"rsa-pss-sha256", "ecdsa-p256-sha256", "ed25519"}
 	fixtures := []string{"text.txt", "binary.bin", "empty.bin"}
 
@@ -389,7 +387,7 @@ func TestScenarios(t *testing.T) {
 				tsPath := createTrustStore(t, tmp, []testKeypair{key}, nil)
 				artPath := filepath.Join(repoRoot, "test", "fixtures", fix)
 
-				// Test CLI sign if wired, else fallback to test helper bundle
+				// pakai CLI sign kalau ada, kalau tidak fallback ke helper bundle
 				bundlePath := filepath.Join(tmp, "release.json")
 				signRes := runCLI("sign", "--file", artPath, "--package", "test-app", "--version", "1.0.0", "--key", key.privPath, "--out", bundlePath)
 				if signRes.ExitCode != 0 && strings.Contains(signRes.Stderr, "not wired yet") {
@@ -427,9 +425,7 @@ func TestScenarios(t *testing.T) {
 		}
 	}
 
-	// =========================================================================
-	// ed25519, modify 1 byte of artifact -> ARTIFACT_MISMATCH
-	// =========================================================================
+	// ed25519, ubah 1 byte artifact -> ARTIFACT_MISMATCH
 	t.Run("U02", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -439,7 +435,7 @@ func TestScenarios(t *testing.T) {
 		_ = os.WriteFile(artPath, []byte("authentic payload data"), 0644)
 		bundlePath := createBundle(t, tmp, key, "test-app", "1.0.0", artPath)
 
-		// Modify 1 byte in artifact
+		// ubah 1 byte artifact
 		_ = os.WriteFile(artPath, []byte("authentic paylxad data"), 0644)
 
 		verifyRes := runCLI("verify", "--file", artPath, "--bundle", bundlePath, "--trust-store", tsPath, "--package", "test-app", "--version", "1.0.0", "--json")
@@ -469,9 +465,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, append 1 byte & truncate 1 byte -> ARTIFACT_MISMATCH
-	// =========================================================================
+	// ed25519, tambah dan potong 1 byte -> ARTIFACT_MISMATCH
 	t.Run("U03", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -481,7 +475,7 @@ func TestScenarios(t *testing.T) {
 		_ = os.WriteFile(artPath, []byte("authentic payload"), 0644)
 		bundlePath := createBundle(t, tmp, key, "test-app", "1.0.0", artPath)
 
-		// Append 1 byte
+		// tambah 1 byte
 		_ = os.WriteFile(artPath, []byte("authentic payload!"), 0644)
 
 		verifyRes := runCLI("verify", "--file", artPath, "--bundle", bundlePath, "--trust-store", tsPath, "--package", "test-app", "--version", "1.0.0", "--json")
@@ -511,9 +505,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, decode manifest, change version, old signature -> INVALID_SIGNATURE
-	// =========================================================================
+	// ed25519, ubah version di manifest, signature lama -> INVALID_SIGNATURE
 	t.Run("U04", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -529,7 +521,7 @@ func TestScenarios(t *testing.T) {
 		)
 		sig := signBytes(t, key, []byte(origManifest))
 
-		// Tamper version in canonical manifest
+		// ubah version di canonical manifest
 		tamperedManifest := fmt.Sprintf(
 			`{"schema":"minisign-manifest/v1","package":"test-app","version":"1.0.1","algorithm":"%s","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 			key.profile, key.fingerprint, len(artData), sha256Hex(artData),
@@ -566,9 +558,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, flip 1 bit in signature -> INVALID_SIGNATURE
-	// =========================================================================
+	// ed25519, flip 1 bit signature -> INVALID_SIGNATURE
 	t.Run("U05", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -578,7 +568,7 @@ func TestScenarios(t *testing.T) {
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 		bundlePath := createBundle(t, tmp, key, "test-app", "1.0.0", artPath)
 
-		// Read bundle and flip bit in signature
+		// baca bundle lalu flip bit signature
 		bBytes, _ := os.ReadFile(bundlePath)
 		manifestRaw, sigRaw, err := bundle.ParseStrict(bBytes)
 		if err != nil {
@@ -615,9 +605,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, empty trust store -> KEY_NOT_TRUSTED
-	// =========================================================================
+	// ed25519, trust store kosong -> KEY_NOT_TRUSTED
 	t.Run("U06", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -655,9 +643,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, key scoped to other package -> KEY_NOT_TRUSTED
-	// =========================================================================
+	// ed25519, key untuk package lain -> KEY_NOT_TRUSTED
 	t.Run("U07", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -696,9 +682,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, CLI --version mismatch -> METADATA_MISMATCH
-	// =========================================================================
+	// ed25519, --version CLI beda -> METADATA_MISMATCH
 	t.Run("U08", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -735,9 +719,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, rename artifact -> METADATA_MISMATCH
-	// =========================================================================
+	// ed25519, artifact diganti nama -> METADATA_MISMATCH
 	t.Run("U09", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -777,9 +759,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// FORMAT_ERROR cases
-	// =========================================================================
+	// kasus FORMAT_ERROR
 	t.Run("U10a", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -787,7 +767,7 @@ func TestScenarios(t *testing.T) {
 		artPath := filepath.Join(tmp, "app.bin")
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 
-		// Duplicate key in bundle
+		// duplicate key di bundle
 		dupBundle := fmt.Sprintf(`{"schema":"minisign-bundle/v1","schema":"minisign-bundle/v1","manifest_b64":"%s","signature_b64":"%s"}`,
 			base64.StdEncoding.EncodeToString([]byte("{}")), base64.StdEncoding.EncodeToString(make([]byte, 64)))
 		bPath := filepath.Join(tmp, "dup_bundle.json")
@@ -827,7 +807,7 @@ func TestScenarios(t *testing.T) {
 		artPath := filepath.Join(tmp, "app.bin")
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 
-		// artifact.size as string
+		// artifact.size berupa string
 		badManifest := fmt.Sprintf(
 			`{"schema":"minisign-manifest/v1","package":"test-app","version":"1.0.0","algorithm":"ed25519","keyid":"%s","artifact":{"name":"app.bin","size":"7","sha256":"%s"}}`,
 			key.fingerprint, sha256Hex([]byte("payload")),
@@ -870,7 +850,7 @@ func TestScenarios(t *testing.T) {
 		artPath := filepath.Join(tmp, "app.bin")
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 
-		// signature base64 with illegal characters
+		// signature base64 dengan karakter ilegal
 		bPath := filepath.Join(tmp, "b10c.json")
 		_ = os.WriteFile(bPath, []byte(`{"schema":"minisign-bundle/v1","manifest_b64":"YWJj","signature_b64":"bad!!base64"}`), 0644)
 
@@ -941,9 +921,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, unsupported algorithm rsa-pkcs1-sha256 -> UNSUPPORTED_ALGORITHM
-	// =========================================================================
+	// ed25519, algorithm rsa-pkcs1-sha256 -> UNSUPPORTED_ALGORITHM
 	t.Run("U11", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -987,9 +965,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, sign with other key not in trust store -> KEY_NOT_TRUSTED
-	// =========================================================================
+	// ed25519, sign dengan key di luar trust store -> KEY_NOT_TRUSTED
 	t.Run("U12", func(t *testing.T) {
 		tmp := t.TempDir()
 		pubKey := loadKeypair(t, "ed25519", "publisher")
@@ -998,7 +974,7 @@ func TestScenarios(t *testing.T) {
 
 		artPath := filepath.Join(tmp, "app.bin")
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
-		// Sign using otherKey
+		// sign pakai otherKey
 		bundlePath := createBundle(t, tmp, otherKey, "test-app", "1.0.0", artPath)
 
 		verifyRes := runCLI("verify", "--file", artPath, "--bundle", bundlePath, "--trust-store", tsPath, "--package", "test-app", "--version", "1.0.0", "--json")
@@ -1028,9 +1004,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// ed25519, reformat bundle JSON with reordered keys -> OK
-	// =========================================================================
+	// ed25519, bundle JSON diformat ulang dengan urutan key beda -> OK
 	t.Run("U13", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -1040,7 +1014,7 @@ func TestScenarios(t *testing.T) {
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 		bundlePath := createBundle(t, tmp, key, "test-app", "1.0.0", artPath)
 
-		// Read bundle and reorder keys in bundle JSON (signature_b64 before manifest_b64)
+		// baca bundle, urutkan ulang key (signature_b64 sebelum manifest_b64)
 		bBytes, _ := os.ReadFile(bundlePath)
 		manifestRaw, sigRaw, err := bundle.ParseStrict(bBytes)
 		if err != nil {
@@ -1077,9 +1051,7 @@ func TestScenarios(t *testing.T) {
 		}
 	})
 
-	// =========================================================================
-	// every profile, sign identical manifest twice -> randomness properties
-	// =========================================================================
+	// semua profile, sign manifest sama dua kali -> sifat randomness
 	for _, prof := range profiles {
 		testID := fmt.Sprintf("U14-%s", prof)
 		t.Run(testID, func(t *testing.T) {
@@ -1131,9 +1103,7 @@ func TestScenarios(t *testing.T) {
 		})
 	}
 
-	// =========================================================================
-	// Additional Negative Cases from Contract
-	// =========================================================================
+	// kasus negatif tambahan dari kontrak
 	t.Run("Neg_ProfileMismatch", func(t *testing.T) {
 		tmp := t.TempDir()
 		key := loadKeypair(t, "ed25519", "publisher")
@@ -1141,7 +1111,7 @@ func TestScenarios(t *testing.T) {
 		artData := []byte("payload")
 		_ = os.WriteFile(artPath, artData, 0644)
 
-		// Manifest claims rsa-pss-sha256, trust store declares ed25519
+		// manifest klaim rsa-pss-sha256, trust store deklarasi ed25519
 		manifest := fmt.Sprintf(
 			`{"schema":"minisign-manifest/v1","package":"test-app","version":"1.0.0","algorithm":"rsa-pss-sha256","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 			key.fingerprint, len(artData), sha256Hex(artData),
@@ -1219,7 +1189,7 @@ func TestScenarios(t *testing.T) {
 		artPath := filepath.Join(tmp, "app.bin")
 		_ = os.WriteFile(artPath, []byte("payload"), 0644)
 
-		// Bundle > 64 KiB
+		// bundle > 64 KiB
 		bPath := filepath.Join(tmp, "big_bundle.json")
 		_ = os.WriteFile(bPath, make([]byte, 65537), 0644)
 

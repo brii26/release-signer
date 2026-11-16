@@ -28,7 +28,7 @@ import "github.com/brii26/release-signer/pkg/release"
 
 ## Constants
 
-<a name="ProfileRSAPSS"></a>Profile names as they appear in the manifest algorithm field.
+<a name="ProfileRSAPSS"></a>Nama profile di field algorithm manifest.
 
 ```go
 const (
@@ -38,7 +38,7 @@ const (
 )
 ```
 
-<a name="MaxBundleSize"></a>Size limits in bytes for the files Verify reads.
+<a name="MaxBundleSize"></a>Batas ukuran \(byte\) file yang dibaca Verify.
 
 ```go
 const (
@@ -50,16 +50,16 @@ const (
 
 ## Variables
 
-<a name="ErrInput"></a>ErrInput wraps every Sign failure caused by input, I/O, or environment \(exit code 2\).
+<a name="ErrInput"></a>ErrInput membungkus semua error Sign karena input, I/O, atau environment \(exit 2\).
 
 ```go
 var ErrInput = errors.New("input error")
 ```
 
 <a name="CheckInput"></a>
-## type [CheckInput](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L43-L51>)
+## type [CheckInput](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L40-L48>)
 
-CheckInput is the input of SBOMCheck. Package and Version are the values the user expects.
+CheckInput adalah input SBOMCheck, Package dan Version adalah nilai yang diharapkan user.
 
 ```go
 type CheckInput struct {
@@ -74,9 +74,9 @@ type CheckInput struct {
 ```
 
 <a name="CheckResult"></a>
-## type [CheckResult](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L55-L61>)
+## type [CheckResult](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L51-L57>)
 
-CheckResult adalah hasil sbom check. Release dan SBOM berisi hasil verify masing\-masing, nil kalau pemeriksaan itu belum sempat dijalankan.
+CheckResult hasil sbom check, Release dan SBOM nil kalau cek itu belum jalan.
 
 ```go
 type CheckResult struct {
@@ -89,18 +89,18 @@ type CheckResult struct {
 ```
 
 <a name="SBOMCheck"></a>
-### func [SBOMCheck](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L76>)
+### func [SBOMCheck](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L71>)
 
 ```go
 func SBOMCheck(in CheckInput) CheckResult
 ```
 
-SBOMCheck memverifikasi bundle rilis, lalu bundle SBOM, lalu mencocokkan binding di SBOM dengan manifest rilis. Berhenti di kegagalan pertama.
+SBOMCheck verify bundle rilis, lalu SBOM, lalu cocokkan binding SBOM ke manifest, berhenti di gagal pertama.
 
 <details><summary>Example</summary>
 <p>
 
-Sign a release and its SBOM separately, then check that they belong together.
+Sign rilis dan SBOM terpisah, lalu cek keduanya cocok.
 
 ```go
 package main
@@ -117,7 +117,7 @@ import (
 	"github.com/brii26/release-signer/pkg/truststore"
 )
 
-// fixture creates a signing key, a trust store that allows it for demo-app, and an artifact.
+// fixture bikin signing key, trust store yang izinkan demo-app, dan artifact.
 func fixture(dir string) (key, store, artifact, pubPEM string) {
 	signer, err := keys.Generate(profile.Ed25519)
 	if err != nil {
@@ -190,18 +190,18 @@ true OK
 </details>
 
 <a name="CheckResult.ExitCode"></a>
-### func \(CheckResult\) [ExitCode](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L64>)
+### func \(CheckResult\) [ExitCode](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L60>)
 
 ```go
 func (r CheckResult) ExitCode() int
 ```
 
-ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT\_ERROR, 1 otherwise.
+ExitCode: 0 untuk OK, 2 untuk INPUT\_ERROR, 1 lainnya.
 
 <a name="Result"></a>
-## type [Result](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L63-L71>)
+## type [Result](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L61-L69>)
 
-Result is the verification result \(Table 2.9\). Algorithm, KeyID, Package, and Version are nil until the manifest could be read. When Valid is false they only explain the failure and must not be treated as trusted data.
+Result hasil verifikasi \(Tabel 2.9\), field metadata nil sebelum manifest terbaca, jangan dipercaya kalau Valid false.
 
 ```go
 type Result struct {
@@ -216,27 +216,27 @@ type Result struct {
 ```
 
 <a name="SBOMVerify"></a>
-### func [SBOMVerify](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L38>)
+### func [SBOMVerify](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L35>)
 
 ```go
 func SBOMVerify(in VerifyInput) Result
 ```
 
-SBOMVerify memverifikasi bundle SBOM dengan urutan pemeriksaan yang sama seperti artefak rilis \(Tabel 2.8\). VerifyInput.ArtifactPath berisi path SBOM.
+SBOMVerify verify bundle SBOM dengan urutan cek sama seperti rilis \(Tabel 2.8\), ArtifactPath = path SBOM.
 
 <a name="Verify"></a>
-### func [Verify](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L113>)
+### func [Verify](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L111>)
 
 ```go
 func Verify(in VerifyInput) Result
 ```
 
-Verify implements the strict 7\-stage verification engine specified in Table 2.8.
+Verify menjalankan verifikasi strict 7 tahap \(Tabel 2.8\).
 
 <details><summary>Example</summary>
 <p>
 
-Sign an artifact and verify the bundle against a trust store.
+Sign artifact lalu verify bundle dengan trust store.
 
 ```go
 package main
@@ -252,7 +252,7 @@ import (
 	"github.com/brii26/release-signer/pkg/truststore"
 )
 
-// fixture creates a signing key, a trust store that allows it for demo-app, and an artifact.
+// fixture bikin signing key, trust store yang izinkan demo-app, dan artifact.
 func fixture(dir string) (key, store, artifact, pubPEM string) {
 	signer, err := keys.Generate(profile.Ed25519)
 	if err != nil {
@@ -299,7 +299,7 @@ func main() {
 	})
 	fmt.Println(res.Valid, res.Status, res.ExitCode())
 
-	// A different expected version is rejected, even though the signature is valid.
+	// version yang diharapkan beda ditolak walau signature sah
 	res = release.Verify(release.VerifyInput{
 		ArtifactPath: artifact, BundlePath: bundlePath, TrustStorePath: store,
 		Package: "demo-app", Version: "2.0.0",
@@ -319,18 +319,18 @@ false METADATA_MISMATCH 1
 </details>
 
 <a name="Result.ExitCode"></a>
-### func \(Result\) [ExitCode](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L74>)
+### func \(Result\) [ExitCode](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L72>)
 
 ```go
 func (r Result) ExitCode() int
 ```
 
-ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT\_ERROR, 1 otherwise.
+ExitCode: 0 untuk OK, 2 untuk INPUT\_ERROR, 1 lainnya.
 
 <a name="SignInput"></a>
 ## type [SignInput](<https://github.com/brii26/release-signer/blob/main/pkg/release/sign.go#L24-L31>)
 
-SignInput is the input of Sign. The profile comes from the private key at KeyPath.
+SignInput adalah input Sign, profile diambil dari private key di KeyPath.
 
 ```go
 type SignInput struct {
@@ -346,7 +346,7 @@ type SignInput struct {
 <a name="SignOutput"></a>
 ## type [SignOutput](<https://github.com/brii26/release-signer/blob/main/pkg/release/sign.go#L34-L39>)
 
-SignOutput reports what Sign produced: keyid, profile, the signed manifest bytes, and the bundle path.
+SignOutput: keyid, profile, byte manifest yang di\-sign, dan path bundle.
 
 ```go
 type SignOutput struct {
@@ -358,33 +358,33 @@ type SignOutput struct {
 ```
 
 <a name="SBOMSign"></a>
-### func [SBOMSign](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L18>)
+### func [SBOMSign](<https://github.com/brii26/release-signer/blob/main/pkg/release/sbom.go#L16>)
 
 ```go
 func SBOMSign(in SignInput) (SignOutput, error)
 ```
 
-SBOMSign menandatangani file SBOM sebagai artefak terpisah. SBOM harus punya binding SHA\-256 yang valid, kalau tidak ditolak dengan ErrInput. SignInput.ArtifactPath berisi path SBOM.
+SBOMSign sign file SBOM \(ArtifactPath\) sebagai artifact terpisah, ErrInput kalau binding SHA\-256 tidak valid.
 
 <a name="Sign"></a>
-### func [Sign](<https://github.com/brii26/release-signer/blob/main/pkg/release/sign.go#L43>)
+### func [Sign](<https://github.com/brii26/release-signer/blob/main/pkg/release/sign.go#L42>)
 
 ```go
 func Sign(in SignInput) (SignOutput, error)
 ```
 
-Sign reads the artifact, builds and signs its manifest, and writes the bundle to OutPath. The artifact is only read, never modified or executed. Errors wrap ErrInput.
+Sign baca artifact, bikin dan sign manifest, tulis bundle ke OutPath, artifact tidak diubah.
 
 <a name="Status"></a>
 ## type [Status](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L27>)
 
-Status is the outcome of a verification \(Table 2.8\).
+Status adalah hasil verifikasi \(Tabel 2.8\).
 
 ```go
 type Status string
 ```
 
-<a name="StatusInputError"></a>Verification statuses, in the order the checks run.
+<a name="StatusInputError"></a>Status verifikasi, urut sesuai pemeriksaan.
 
 ```go
 const (
@@ -399,16 +399,16 @@ const (
 )
 ```
 
-<a name="StatusSBOMMismatch"></a>StatusSBOMMismatch dipakai kalau kedua bundle sah tapi SBOM tidak terikat ke rilis.
+<a name="StatusSBOMMismatch"></a>StatusSBOMMismatch: kedua bundle sah tapi SBOM tidak terikat ke rilis.
 
 ```go
 const StatusSBOMMismatch Status = "SBOM_MISMATCH"
 ```
 
 <a name="VerifyInput"></a>
-## type [VerifyInput](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L85-L91>)
+## type [VerifyInput](<https://github.com/brii26/release-signer/blob/main/pkg/release/verify.go#L83-L89>)
 
-VerifyInput is the input of Verify. Package and Version are the values the user expects.
+VerifyInput adalah input Verify, Package dan Version adalah nilai yang diharapkan user.
 
 ```go
 type VerifyInput struct {

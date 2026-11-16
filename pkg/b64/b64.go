@@ -6,20 +6,15 @@ import (
 	"fmt"
 )
 
-// ErrInvalid is returned by DecodeStrict for any input that is not canonical
-// RFC 4648 standard Base64.
+// ErrInvalid dikembalikan DecodeStrict untuk input yang bukan Base64 RFC 4648 canonical.
 var ErrInvalid = errors.New("invalid base64")
 
-// Encode returns the RFC 4648 standard Base64 encoding of b, with padding.
+// Encode return Base64 standar RFC 4648 dengan padding.
 func Encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-// DecodeStrict decodes canonical RFC 4648 standard Base64. It rejects any byte outside
-// A-Z a-z 0-9 + / =, white space, wrong padding, and non-zero trailing bits (it re-encodes
-// the result and compares with the input).
-//
-// StdEncoding diam-diam membuang \r dan \n, jadi alfabet dicek manual dulu.
+// DecodeStrict decode Base64 canonical, alfabet dicek manual karena StdEncoding diam-diam buang \r dan \n.
 func DecodeStrict(s string) ([]byte, error) {
 	for i := 0; i < len(s); i++ {
 		if !inAlphabet(s[i]) {

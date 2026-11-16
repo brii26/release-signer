@@ -6,7 +6,7 @@
 import "github.com/brii26/release-signer/pkg/truststore"
 ```
 
-Package truststore mengelola kunci publik tepercaya dan izin per paket.
+Package truststore ngatur public key tepercaya dan izin per package.
 
 ## Index
 
@@ -25,7 +25,7 @@ Package truststore mengelola kunci publik tepercaya dan izin per paket.
 
 ## Constants
 
-<a name="Schema"></a>Schema is the fixed schema value of a trust store file.
+<a name="Schema"></a>Schema adalah nilai schema file trust store.
 
 ```go
 const Schema = "minisign-trust/v1"
@@ -33,7 +33,7 @@ const Schema = "minisign-trust/v1"
 
 ## Variables
 
-<a name="ErrFormat"></a>Errors returned by the trust store functions. Callers match them with errors.Is.
+<a name="ErrFormat"></a>Error dari fungsi trust store, cocokkan dengan errors.Is.
 
 ```go
 var (
@@ -44,9 +44,9 @@ var (
 ```
 
 <a name="Entry"></a>
-## type [Entry](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L36-L42>)
+## type [Entry](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L35-L41>)
 
-Entry is one trusted public key together with the packages it may sign. Public is the parsed key and is never written to JSON.
+Entry adalah satu public key tepercaya beserta package yang boleh di\-sign, Public tidak masuk JSON.
 
 ```go
 type Entry struct {
@@ -59,18 +59,18 @@ type Entry struct {
 ```
 
 <a name="Entry.Allows"></a>
-### func \(\*Entry\) [Allows](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L83>)
+### func \(\*Entry\) [Allows](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L81>)
 
 ```go
 func (e *Entry) Allows(pkg string) bool
 ```
 
-Allows reports whether the key may sign package pkg \(exact match, no wildcard\).
+Allows cek apakah key boleh sign package pkg \(exact match, tanpa wildcard\).
 
 <a name="Store"></a>
-## type [Store](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L45-L47>)
+## type [Store](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L44-L46>)
 
-Store is a validated trust store. An empty store trusts no key.
+Store adalah trust store tervalidasi, store kosong tidak percaya key apa pun.
 
 ```go
 type Store struct {
@@ -79,7 +79,7 @@ type Store struct {
 ```
 
 <a name="Load"></a>
-### func [Load](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L50>)
+### func [Load](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L49>)
 
 ```go
 func Load(path string) (*Store, error)
@@ -88,16 +88,16 @@ func Load(path string) (*Store, error)
 Load membaca dan memvalidasi seluruh store tanpa mengubah file.
 
 <a name="LoadOrEmpty"></a>
-### func [LoadOrEmpty](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L60>)
+### func [LoadOrEmpty](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L58>)
 
 ```go
 func LoadOrEmpty(path string) (*Store, error)
 ```
 
-LoadOrEmpty khusus untuk trust add. File rusak, tidak terbaca, atau symlink yang targetnya hilang tetap ditolak; hanya path baru menjadi store kosong.
+LoadOrEmpty khusus trust add: file rusak atau symlink putus ditolak, hanya path baru jadi store kosong.
 
 <a name="Store.Add"></a>
-### func \(\*Store\) [Add](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L88>)
+### func \(\*Store\) [Add](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L86>)
 
 ```go
 func (s *Store) Add(pubPEM []byte, pkg string) (Entry, bool, error)
@@ -108,7 +108,7 @@ Add mengembalikan changed=false jika pasangan keyid dan paket sudah ada.
 <details><summary>Example</summary>
 <p>
 
-A key is trusted only for the packages it was added for.
+Key hanya tepercaya untuk package yang ditambahkan.
 
 ```go
 package main
@@ -139,7 +139,7 @@ func main() {
 	fmt.Println(changed, entry.Allows("demo-app"), entry.Allows("other-app"))
 
 	_, changed, _ = store.Add(pub, "demo-app")
-	fmt.Println(changed) // adding the same key and package again changes nothing
+	fmt.Println(changed) // tambah key dan package yang sama lagi tidak mengubah apa pun
 }
 ```
 
@@ -154,30 +154,30 @@ false
 </details>
 
 <a name="Store.Lookup"></a>
-### func \(\*Store\) [Lookup](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L71>)
+### func \(\*Store\) [Lookup](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L69>)
 
 ```go
 func (s *Store) Lookup(keyID string) (*Entry, bool)
 ```
 
-Lookup returns the entry whose keyid is keyID.
+Lookup return entry dengan keyid keyID.
 
 <a name="Store.Remove"></a>
-### func \(\*Store\) [Remove](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L119>)
+### func \(\*Store\) [Remove](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L117>)
 
 ```go
 func (s *Store) Remove(keyID string) error
 ```
 
-Remove deletes the entry with the given keyid, or returns ErrNotFound.
+Remove hapus entry dengan keyid tertentu, atau ErrNotFound.
 
 <a name="Store.Save"></a>
-### func \(\*Store\) [Save](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L133>)
+### func \(\*Store\) [Save](<https://github.com/brii26/release-signer/blob/main/pkg/truststore/truststore.go#L130>)
 
 ```go
 func (s *Store) Save(path string) error
 ```
 
-Save memvalidasi ulang field yang diserialisasi sebelum mengganti file secara atomik. Public hanya cache hasil parse dan tidak pernah masuk JSON.
+Save validasi ulang field serialisasi lalu ganti file atomik, Public cuma cache, tidak masuk JSON.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

@@ -9,12 +9,10 @@ import (
 	"github.com/brii26/release-signer/pkg/sbom"
 )
 
-// StatusSBOMMismatch dipakai kalau kedua bundle sah tapi SBOM tidak terikat ke rilis.
+// StatusSBOMMismatch: kedua bundle sah tapi SBOM tidak terikat ke rilis.
 const StatusSBOMMismatch Status = "SBOM_MISMATCH"
 
-// SBOMSign menandatangani file SBOM sebagai artefak terpisah. SBOM harus punya
-// binding SHA-256 yang valid, kalau tidak ditolak dengan ErrInput.
-// SignInput.ArtifactPath berisi path SBOM.
+// SBOMSign sign file SBOM (ArtifactPath) sebagai artifact terpisah, ErrInput kalau binding SHA-256 tidak valid.
 func SBOMSign(in SignInput) (SignOutput, error) {
 	info, err := os.Stat(in.ArtifactPath)
 	if err != nil {
@@ -33,13 +31,12 @@ func SBOMSign(in SignInput) (SignOutput, error) {
 	return Sign(in)
 }
 
-// SBOMVerify memverifikasi bundle SBOM dengan urutan pemeriksaan yang sama
-// seperti artefak rilis (Tabel 2.8). VerifyInput.ArtifactPath berisi path SBOM.
+// SBOMVerify verify bundle SBOM dengan urutan cek sama seperti rilis (Tabel 2.8), ArtifactPath = path SBOM.
 func SBOMVerify(in VerifyInput) Result {
 	return Verify(in)
 }
 
-// CheckInput is the input of SBOMCheck. Package and Version are the values the user expects.
+// CheckInput adalah input SBOMCheck, Package dan Version adalah nilai yang diharapkan user.
 type CheckInput struct {
 	ArtifactPath   string
 	ReleaseBundle  string
@@ -50,8 +47,7 @@ type CheckInput struct {
 	Version        string
 }
 
-// CheckResult adalah hasil sbom check. Release dan SBOM berisi hasil verify
-// masing-masing, nil kalau pemeriksaan itu belum sempat dijalankan.
+// CheckResult hasil sbom check, Release dan SBOM nil kalau cek itu belum jalan.
 type CheckResult struct {
 	Valid   bool    `json:"valid"`
 	Status  Status  `json:"status"`
@@ -60,7 +56,7 @@ type CheckResult struct {
 	SBOM    *Result `json:"sbom"`
 }
 
-// ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT_ERROR, 1 otherwise.
+// ExitCode: 0 untuk OK, 2 untuk INPUT_ERROR, 1 lainnya.
 func (r CheckResult) ExitCode() int {
 	switch r.Status {
 	case StatusOK:
@@ -71,8 +67,7 @@ func (r CheckResult) ExitCode() int {
 	return 1
 }
 
-// SBOMCheck memverifikasi bundle rilis, lalu bundle SBOM, lalu mencocokkan
-// binding di SBOM dengan manifest rilis. Berhenti di kegagalan pertama.
+// SBOMCheck verify bundle rilis, lalu SBOM, lalu cocokkan binding SBOM ke manifest, berhenti di gagal pertama.
 func SBOMCheck(in CheckInput) CheckResult {
 	rel := Verify(VerifyInput{
 		ArtifactPath:   in.ArtifactPath,

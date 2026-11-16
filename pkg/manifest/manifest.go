@@ -11,13 +11,13 @@ import (
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
-// Schema is the fixed schema value of a manifest and MaxSize is the maximum size in bytes.
+// Schema dan MaxSize (byte) dari manifest.
 const (
 	Schema  = "minisign-manifest/v1"
 	MaxSize = 16 * 1024
 )
 
-// ErrFormat wraps every manifest validation or parsing failure.
+// ErrFormat membungkus semua error validasi atau parsing manifest.
 var ErrFormat = errors.New("manifest format error")
 
 var (
@@ -27,14 +27,14 @@ var (
 	reHex64   = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
-// Artifact describes the release file: its basename, size in bytes, and lowercase hex SHA-256.
+// Artifact: basename file rilis, ukuran byte, dan SHA-256 hex lowercase.
 type Artifact struct {
 	Name   string
 	Size   int64
 	SHA256 string
 }
 
-// Manifest is the release manifest (Table 2.3). Canonical gives the exact bytes that are signed.
+// Manifest rilis (Tabel 2.3), Canonical kasih byte persis yang di-sign.
 type Manifest struct {
 	Schema    string
 	Package   string
@@ -44,7 +44,7 @@ type Manifest struct {
 	Artifact  Artifact
 }
 
-// New builds a Manifest and validates every field against Table 2.3.
+// New bikin Manifest dan validasi semua field (Tabel 2.3).
 func New(pkg, version, algorithm, keyID, name string, size int64, sha256hex string) (Manifest, error) {
 	m := Manifest{
 		Schema:    Schema,
@@ -60,7 +60,7 @@ func New(pkg, version, algorithm, keyID, name string, size int64, sha256hex stri
 	return m, nil
 }
 
-// Algorithm tidak dicocokkan ke profil di sini, itu tugas langkah 3 verify.
+// Algorithm dicocokkan ke profile di verify, bukan di sini.
 func (m Manifest) Validate() error {
 	switch {
 	case m.Schema != Schema:
@@ -102,8 +102,7 @@ func (m Manifest) Canonical() []byte {
 	return []byte(b.String())
 }
 
-// ParseStrict parses raw as a manifest. Besides strict JSON and field validation, raw must
-// equal the canonical serialization byte for byte, so reformatted manifests are rejected.
+// ParseStrict parse raw jadi manifest, harus sama persis dengan bentuk canonical.
 func ParseStrict(raw []byte) (Manifest, error) {
 	if len(raw) > MaxSize {
 		return Manifest{}, formatErr("manifest exceeds %d bytes", MaxSize)

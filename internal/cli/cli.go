@@ -26,12 +26,12 @@ const (
 
 var packageRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 
-// IsValidAlgorithm checks whether the algorithm matches one of the three profiles.
+// IsValidAlgorithm cek apakah algorithm salah satu dari tiga profile.
 func IsValidAlgorithm(a string) bool {
 	return a == ProfileRSAPSS || a == ProfileECDSA || a == ProfileEd25519
 }
 
-// Table 2.9 verification result structure.
+// Struktur hasil verifikasi (Tabel 2.9).
 type VerifyResult struct {
 	Valid     bool    `json:"valid"`
 	Status    string  `json:"status"`
@@ -326,7 +326,7 @@ Flags:
   -h, --help       Show help for trust remove
 `
 
-// Run executes the CLI with the provided arguments and streams.
+// Run menjalankan CLI dengan args dan stream yang diberikan.
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		fmt.Fprint(stderr, rootUsage)

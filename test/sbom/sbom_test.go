@@ -114,7 +114,7 @@ func must(t *testing.T, args ...string) execResult {
 	return r
 }
 
-// env adalah satu rilis lengkap: artefak, bundle rilis, SBOM, bundle SBOM, trust store.
+// env adalah satu rilis lengkap: artifact, bundle rilis, SBOM, bundle SBOM, trust store.
 type env struct {
 	t        *testing.T
 	dir      string
@@ -173,7 +173,7 @@ func record1(t *testing.T, id, profile, input, wantStatus string, wantExit int, 
 	mu.Unlock()
 }
 
-// SBOM sah dan artefak sah.
+// SBOM sah dan artifact sah.
 func TestS01Valid(t *testing.T) {
 	for _, p := range profiles {
 		t.Run(p, func(t *testing.T) {
@@ -183,7 +183,7 @@ func TestS01Valid(t *testing.T) {
 	}
 }
 
-// isi SBOM diubah setelah ditandatangani.
+// isi SBOM diubah setelah di-sign.
 func TestS02SBOMTampered(t *testing.T) {
 	e := newEnv(t, "ed25519")
 	f, err := os.OpenFile(e.sbomPath, os.O_APPEND|os.O_WRONLY, 0)
@@ -197,7 +197,7 @@ func TestS02SBOMTampered(t *testing.T) {
 	record1(t, "S02", "ed25519", "SBOM gets 1 extra byte after sign", "ARTIFACT_MISMATCH", 1, e.check())
 }
 
-// artefak rilis diganti dengan yang lain dan ditandatangani ulang secara sah, SBOM lama.
+// artifact rilis diganti dan di-sign ulang secara sah, SBOM lama.
 func TestS03ArtifactReplaced(t *testing.T) {
 	e := newEnv(t, "ed25519")
 	if err := os.WriteFile(e.artifact, []byte("artefak pengganti yang berbeda\n"), 0o644); err != nil {
@@ -207,7 +207,7 @@ func TestS03ArtifactReplaced(t *testing.T) {
 	record1(t, "S03", "ed25519", "artifact replaced and re-signed, old SBOM", "SBOM_MISMATCH", 1, e.check())
 }
 
-// SBOM ditandatangani kunci yang tidak ada di trust store.
+// SBOM di-sign key yang tidak ada di trust store.
 func TestS04SBOMUntrustedKey(t *testing.T) {
 	e := newEnv(t, "ed25519")
 	other := e.p("other")

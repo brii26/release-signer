@@ -100,9 +100,7 @@ func TestArtifactDeterminism(t *testing.T) {
 	}
 }
 
-// This exercises real subprocesses with just Ed25519, a 1 KiB artifact, one
-// warmup and two samples, all in temporary directories. It never runs the full
-// benchmark or modifies committed results.
+// Smoke test: subprocess asli dengan Ed25519, artifact 1 KiB, 1 warmup, 2 sample, di temp dir.
 func TestSmallRun(t *testing.T) {
 	root, err := filepath.Abs("..")
 	if err != nil {
@@ -110,7 +108,7 @@ func TestSmallRun(t *testing.T) {
 	}
 	tmp := t.TempDir()
 	binary := filepath.Join(tmp, "release-signer")
-	// go test sets the package cwd to bench; build the CLI from the module root.
+	// go test set cwd ke bench, jadi build CLI dari root module
 	if _, err := commandText("go", "build", "-o", binary, filepath.Join(root, "cmd/release-signer")); err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +148,7 @@ func TestSmallRun(t *testing.T) {
 	}
 }
 
-// Pin the default dataset contract without launching expensive cryptography.
+// pin kontrak dataset default tanpa jalanin crypto mahal
 func TestRecordSampleContract(t *testing.T) {
 	cfg := config{OutputDir: t.TempDir(), Samples: measuredSamples, Warmups: warmupSamples}
 	if err := os.MkdirAll(filepath.Join(cfg.OutputDir, "raw"), 0755); err != nil {

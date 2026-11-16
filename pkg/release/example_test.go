@@ -12,7 +12,7 @@ import (
 	"github.com/brii26/release-signer/pkg/truststore"
 )
 
-// fixture creates a signing key, a trust store that allows it for demo-app, and an artifact.
+// fixture bikin signing key, trust store yang izinkan demo-app, dan artifact.
 func fixture(dir string) (key, store, artifact, pubPEM string) {
 	signer, err := keys.Generate(profile.Ed25519)
 	if err != nil {
@@ -40,7 +40,7 @@ func fixture(dir string) (key, store, artifact, pubPEM string) {
 	return key, store, artifact, string(pub)
 }
 
-// Sign an artifact and verify the bundle against a trust store.
+// Sign artifact lalu verify bundle dengan trust store.
 func ExampleVerify() {
 	dir, _ := os.MkdirTemp("", "release-example-")
 	defer os.RemoveAll(dir)
@@ -60,7 +60,7 @@ func ExampleVerify() {
 	})
 	fmt.Println(res.Valid, res.Status, res.ExitCode())
 
-	// A different expected version is rejected, even though the signature is valid.
+	// version yang diharapkan beda ditolak walau signature sah
 	res = release.Verify(release.VerifyInput{
 		ArtifactPath: artifact, BundlePath: bundlePath, TrustStorePath: store,
 		Package: "demo-app", Version: "2.0.0",
@@ -71,7 +71,7 @@ func ExampleVerify() {
 	// false METADATA_MISMATCH 1
 }
 
-// Sign a release and its SBOM separately, then check that they belong together.
+// Sign rilis dan SBOM terpisah, lalu cek keduanya cocok.
 func ExampleSBOMCheck() {
 	dir, _ := os.MkdirTemp("", "sbom-example-")
 	defer os.RemoveAll(dir)

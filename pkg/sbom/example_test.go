@@ -8,7 +8,7 @@ import (
 	"github.com/brii26/release-signer/pkg/sbom"
 )
 
-// Generate an SBOM for an artifact and read its binding back.
+// Generate SBOM untuk artifact lalu baca balik binding-nya.
 func ExampleParseBinding() {
 	dir, err := os.MkdirTemp("", "sbom-example-")
 	if err != nil {
