@@ -1,5 +1,5 @@
 #!/bin/sh
-# Test dependencies stay outside the CLI and go.mod.
+# dependency test (python dll) di luar CLI dan go.mod
 set -eu
 umask 077
 
@@ -26,7 +26,7 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# A minimal report still survives a missing Python prerequisite.
+# report minimal tetap dibuat walau Python tidak ada
 printf '# Interoperability results\n\nRun started; prerequisites pending.\n' > "$report"
 for dependency in python3 go openssl uv sha256sum git; do
     if ! command -v "$dependency" >/dev/null 2>&1; then
@@ -41,8 +41,7 @@ python3 test/interop/check.py init "$report" "$work"
 profile=all
 direction=environment
 
-# Capture and check the actual process status, including expected rejections.
-# No pipeline or `! command` can mask the external verifier's exit code.
+# tangkap exit code asli (termasuk reject yang diharapkan), tanpa pipeline atau `! cmd` yang menutupi
 expect() {
     expected=$1
     shift
@@ -89,8 +88,7 @@ cli_verify() {
 }
 
 fingerprint() {
-    # Two checked commands are equivalent to the documented pipeline without
-    # the POSIX shell problem of losing the first process's failure status.
+    # dua command dicek terpisah supaya exit code proses pertama tidak hilang seperti di pipeline
     expect 0 openssl pkey -pubin -in "$d/key.pub.pem" -outform DER -out "$d/public.der"
     expect 0 sha256sum "$d/public.der"
     cp "$work/command.out" "$d/public.sha256"
