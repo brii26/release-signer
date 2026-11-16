@@ -103,23 +103,7 @@ flowchart LR
     A -.->|hash again| V
 ```
 
-### Sign and verify
-
-```mermaid
-sequenceDiagram
-    participant P as Publisher
-    participant R as Recipient
-    P->>P: hash artifact, build canonical manifest
-    P->>P: sign manifest bytes with private key
-    P->>R: artifact + bundle
-    R->>R: parse bundle, manifest, trust store (strict)
-    R->>R: find keyid in trust store, check algorithm and package
-    R->>R: verify signature with the trusted public key
-    R->>R: compare package, version, size, and SHA-256
-    R->>R: report status and exit code
-```
-
-The private key stays with the publisher. The recipient only needs the artifact, the bundle, and a trust store that contains the publisher's public key.
+The private key stays with the publisher. The recipient only needs the artifact, the bundle, and a trust store that contains the publisher's public key. The full verify decision tree, with the status and exit code of every failure, is in [`docs/security.md`](docs/security.md).
 
 ## Profile to Library API Mapping
 
