@@ -64,6 +64,63 @@ The program has no runtime dependency other than the binary itself.
 
 ---
 
+## Architecture
+
+### Components
+
+The CLI is a thin layer over the `release` package. Lower packages never import upper ones.
+
+```mermaid
+flowchart TD
+    main[cmd/release-signer] --> cli[internal/cli]
+    cli --> release[pkg/release<br/>sign, verify, sbom check]
+    cli --> truststore[pkg/truststore]
+    release --> manifest[pkg/manifest]
+    release --> bundle[pkg/bundle]
+    release --> sigalg[pkg/sigalg]
+    release --> sbom[pkg/sbom]
+    release --> keys[pkg/keys]
+    truststore --> keys
+    manifest --> strictjson[pkg/strictjson]
+    bundle --> strictjson
+    bundle --> b64[pkg/b64]
+    sbom --> strictjson
+    sigalg --> profile[pkg/profile]
+    keys --> profile
+```
+
+### Files and trust
+
+Three file types take part in a release. Only the bundle carries a signature, and the trust store is a separate file owned by the recipient.
+
+```mermaid
+flowchart LR
+    A[artifact<br/>never modified] -->|size, SHA-256| M[manifest<br/>minisign-manifest/v1]
+    M -->|canonical bytes| S((sign with<br/>private key))
+    S --> B[bundle<br/>minisign-bundle/v1<br/>manifest_b64 + signature_b64]
+    T[trust store<br/>minisign-trust/v1<br/>keyid, public key, packages] -.->|trusted config,<br/>never from the bundle| V((verify))
+    B --> V
+    A -.->|hash again| V
+```
+
+### Sign and verify
+
+```mermaid
+sequenceDiagram
+    participant P as Publisher
+    participant R as Recipient
+    P->>P: hash artifact, build canonical manifest
+    P->>P: sign manifest bytes with private key
+    P->>R: artifact + bundle
+    R->>R: parse bundle, manifest, trust store (strict)
+    R->>R: find keyid in trust store, check algorithm and package
+    R->>R: verify signature with the trusted public key
+    R->>R: compare package, version, size, and SHA-256
+    R->>R: report status and exit code
+```
+
+The private key stays with the publisher. The recipient only needs the artifact, the bundle, and a trust store that contains the publisher's public key.
+
 ## Profile to Library API Mapping
 
 | Profile | Hash | Signature | Go API | Signature size |
