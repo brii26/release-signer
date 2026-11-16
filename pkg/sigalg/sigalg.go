@@ -14,7 +14,7 @@ import (
 	"github.com/brii26/release-signer/pkg/profile"
 )
 
-// Sign computes the digital signature for msg according to profile p using priv.
+// Sign hitung signature msg sesuai profile p dengan priv.
 func Sign(p profile.Profile, priv crypto.Signer, msg []byte) ([]byte, error) {
 	if priv == nil {
 		return nil, errors.New("private key is nil")
@@ -69,8 +69,7 @@ func Sign(p profile.Profile, priv crypto.Signer, msg []byte) ([]byte, error) {
 	}
 }
 
-// Verify checks whether sig is a valid signature for msg under pub according to profile p.
-// Returns false on invalid signature, mismatch, or wrong key/signature length.
+// Verify cek sig untuk msg di bawah pub, false kalau invalid, tidak cocok, atau panjang salah.
 func Verify(p profile.Profile, pub crypto.PublicKey, msg, sig []byte) bool {
 	if pub == nil || len(sig) != p.SignatureLen() {
 		return false

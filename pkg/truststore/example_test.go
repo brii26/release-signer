@@ -8,7 +8,7 @@ import (
 	"github.com/brii26/release-signer/pkg/truststore"
 )
 
-// A key is trusted only for the packages it was added for.
+// Key hanya tepercaya untuk package yang ditambahkan.
 func ExampleStore_Add() {
 	signer, err := keys.Generate(profile.Ed25519)
 	if err != nil {
@@ -27,7 +27,7 @@ func ExampleStore_Add() {
 	fmt.Println(changed, entry.Allows("demo-app"), entry.Allows("other-app"))
 
 	_, changed, _ = store.Add(pub, "demo-app")
-	fmt.Println(changed) // adding the same key and package again changes nothing
+	fmt.Println(changed) // tambah key dan package yang sama lagi tidak mengubah apa pun
 	// Output:
 	// true true false
 	// false

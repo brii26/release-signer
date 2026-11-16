@@ -14,14 +14,14 @@ type artifactSpec struct {
 	Size int64
 }
 
+// ukuran artifact yang dipakai benchmark
 var standardArtifacts = []artifactSpec{
 	{"small.bin", 1024},
 	{"medium.bin", 1024 * 1024},
 	{"large.bin", 100 * 1024 * 1024},
 }
 
-// Every file is the prefix of the same stream: byte at offset i is i mod 256.
-// This is deterministic across platforms, Go versions and all three profiles.
+// Tiap file adalah prefix dari stream yang sama (byte ke-i = i mod 256), deterministic di semua platform.
 func writeArtifact(w io.Writer, size int64) error {
 	if size < 0 {
 		return fmt.Errorf("negative artifact size")

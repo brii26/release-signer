@@ -19,7 +19,7 @@ Package bundle menyimpan byte manifest dan signature dalam JSON Base64.
 
 ## Constants
 
-<a name="Schema"></a>Schema is the fixed schema value of a bundle and MaxSize is the maximum bundle size in bytes.
+<a name="Schema"></a>Schema dan MaxSize \(byte\) dari bundle.
 
 ```go
 const (
@@ -30,34 +30,32 @@ const (
 
 ## Variables
 
-<a name="ErrFormat"></a>ErrFormat wraps every bundle parsing failure.
+<a name="ErrFormat"></a>ErrFormat membungkus semua error parsing bundle.
 
 ```go
 var ErrFormat = errors.New("bundle format error")
 ```
 
 <a name="Build"></a>
-## func [Build](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L26>)
+## func [Build](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L25>)
 
 ```go
 func Build(manifestBytes, sig []byte) []byte
 ```
 
-Build returns the bundle JSON \(indented, ending with a newline\) for the manifest bytes and signature. Both are Base64 encoded.
+Build bikin bundle JSON \(indent, akhir newline\) dari manifest dan signature, keduanya Base64.
 
 <a name="ParseStrict"></a>
-## func [ParseStrict](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L40>)
+## func [ParseStrict](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L36>)
 
 ```go
 func ParseStrict(data []byte) (manifestBytes, sig []byte, err error)
 ```
 
-ParseStrict parses a bundle and returns the decoded manifest bytes and signature. The bundle must have exactly the three schema fields, no duplicates, and strict Base64.
-
-Isi manifest dan panjang signature diperiksa caller, bukan di sini.
+ParseStrict parse bundle: tepat tiga field, tanpa duplicate, Base64 strict, isi dicek caller.
 
 <a name="WriteFile"></a>
-## func [WriteFile](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L82>)
+## func [WriteFile](<https://github.com/brii26/release-signer/blob/main/pkg/bundle/bundle.go#L78>)
 
 ```go
 func WriteFile(path string, data []byte, force bool) error

@@ -7,7 +7,7 @@ import (
 	"github.com/brii26/release-signer/pkg/profile"
 )
 
-// Generate a key pair, export the private key as PKCS#8 PEM, and read it back.
+// Generate key pair, export private key ke PKCS#8 PEM, lalu baca balik.
 func ExampleParsePrivatePEM() {
 	signer, err := keys.Generate(profile.Ed25519)
 	if err != nil {
@@ -25,7 +25,7 @@ func ExampleParsePrivatePEM() {
 	// Output: ed25519
 }
 
-// The keyid is the lowercase hex SHA-256 of the DER SPKI, so it is always 64 characters.
+// keyid = SHA-256 hex lowercase dari DER SPKI, jadi selalu 64 karakter.
 func ExampleKeyID() {
 	signer, err := keys.Generate(profile.ECDSA)
 	if err != nil {

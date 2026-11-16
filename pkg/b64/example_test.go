@@ -6,7 +6,7 @@ import (
 	"github.com/brii26/release-signer/pkg/b64"
 )
 
-// Input that is not canonical Base64 is rejected, including embedded newlines.
+// Input yang bukan Base64 canonical ditolak, termasuk newline di dalamnya.
 func ExampleDecodeStrict() {
 	ok, _ := b64.DecodeStrict("Zm9v")
 	fmt.Println(string(ok))

@@ -113,7 +113,7 @@ func newFlagSet(name, usage string, stderr io.Writer) *flag.FlagSet {
 	return fs
 }
 
-// parseFlags mengembalikan (selesai, kode). selesai true berarti pemanggil harus langsung return kode.
+// parseFlags return (selesai, kode), selesai true berarti caller langsung return kode.
 func parseFlags(fs *flag.FlagSet, args []string) (bool, int) {
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {

@@ -1,4 +1,3 @@
-// Command bench measures the public cryptographic APIs and the real CLI.
 package main
 
 import (
@@ -29,7 +28,7 @@ const demoVersion = "1.0.0"
 
 var profiles = []profile.Profile{profile.RSAPSS, profile.ECDSA, profile.Ed25519}
 
-// Keep the in-memory hash observable to the compiler.
+// jaga hash in-memory supaya tidak dibuang compiler
 var hashSink [sha256.Size]byte
 
 type measurement struct {
@@ -143,7 +142,7 @@ func run(generateOnly bool) error {
 	if err := writeReport(cfg.OutputDir, r, binary); err != nil {
 		return err
 	}
-	// Publish a complete successful run. A failed run leaves prior results intact.
+	// publish hasil run yang sukses, run gagal tidak menimpa hasil lama
 	if err := os.MkdirAll("results", 0755); err != nil {
 		return err
 	}
@@ -195,7 +194,7 @@ func runSuite(cfg config, r *report) error {
 		if err != nil {
 			return err
 		}
-		// Reuse the last measured valid key; disk/DER/trust setup is untimed.
+		// pakai ulang key valid terakhir, setup disk/DER/trust tidak diukur
 		id, err := keys.KeyID(key.Public())
 		if err != nil {
 			return err
@@ -299,7 +298,7 @@ func runSuite(cfg config, r *report) error {
 				if err != nil {
 					return 0, err
 				}
-				// Validate each newly written bundle with the real CLI outside sign timing.
+				// validasi tiap bundle baru dengan CLI asli di luar timing sign
 				if err := check(); err != nil {
 					return 0, err
 				}

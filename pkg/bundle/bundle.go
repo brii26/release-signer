@@ -12,17 +12,16 @@ import (
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
-// Schema is the fixed schema value of a bundle and MaxSize is the maximum bundle size in bytes.
+// Schema dan MaxSize (byte) dari bundle.
 const (
 	Schema  = "minisign-bundle/v1"
 	MaxSize = 64 * 1024
 )
 
-// ErrFormat wraps every bundle parsing failure.
+// ErrFormat membungkus semua error parsing bundle.
 var ErrFormat = errors.New("bundle format error")
 
-// Build returns the bundle JSON (indented, ending with a newline) for the manifest bytes
-// and signature. Both are Base64 encoded.
+// Build bikin bundle JSON (indent, akhir newline) dari manifest dan signature, keduanya Base64.
 func Build(manifestBytes, sig []byte) []byte {
 	wire := struct {
 		Schema       string `json:"schema"`
@@ -33,10 +32,7 @@ func Build(manifestBytes, sig []byte) []byte {
 	return append(data, '\n')
 }
 
-// ParseStrict parses a bundle and returns the decoded manifest bytes and signature. The
-// bundle must have exactly the three schema fields, no duplicates, and strict Base64.
-//
-// Isi manifest dan panjang signature diperiksa caller, bukan di sini.
+// ParseStrict parse bundle: tepat tiga field, tanpa duplicate, Base64 strict, isi dicek caller.
 func ParseStrict(data []byte) (manifestBytes, sig []byte, err error) {
 	root, err := strictjson.Parse(data, MaxSize)
 	if err != nil {

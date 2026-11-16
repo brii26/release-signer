@@ -6,7 +6,7 @@
 import "github.com/brii26/release-signer/pkg/sbom"
 ```
 
-Package sbom membuat dan membaca SBOM CycloneDX 1.6 \(JSON\) yang terikat ke SHA\-256 artefak rilis. SBOM ditandatangani sebagai artefak terpisah memakai format bundle yang sama dengan rilis \(lihat pkg/release\).
+Package sbom bikin dan baca SBOM CycloneDX 1.6 \(JSON\) yang terikat ke SHA\-256 artifact rilis, di\-sign sebagai bundle terpisah \(lihat pkg/release\).
 
 ## Index
 
@@ -23,10 +23,10 @@ Package sbom membuat dan membaca SBOM CycloneDX 1.6 \(JSON\) yang terikat ke SHA
 
 ```go
 const (
-    // MaxSize membatasi ukuran SBOM yang mau diparse atau ditandatangani.
+    // MaxSize: batas ukuran SBOM yang diparse atau di-sign.
     MaxSize = 1 << 20 // 1 MiB
 
-    // ArtifactNameProperty adalah nama property yang menyimpan basename artefak rilis.
+    // ArtifactNameProperty: nama property yang simpan basename artifact rilis.
     ArtifactNameProperty = "release-signer:artifact-name"
 )
 ```
@@ -37,24 +37,24 @@ const (
 
 ```go
 var (
-    // ErrFormat dikembalikan kalau SBOM tidak bisa diparse atau tidak punya binding valid.
+    // ErrFormat dikembalikan kalau SBOM tidak bisa diparse atau binding tidak valid.
     ErrFormat = errors.New("sbom format error")
 )
 ```
 
 <a name="Generate"></a>
-## func [Generate](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L78>)
+## func [Generate](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L76>)
 
 ```go
 func Generate(artifactPath, pkg, version string) ([]byte, error)
 ```
 
-Generate membuat SBOM minimal untuk artefak. Isi artefak hanya dibaca, tidak diubah.
+Generate bikin SBOM minimal untuk artifact, isi artifact hanya dibaca.
 
 <a name="Binding"></a>
-## type [Binding](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L40-L45>)
+## type [Binding](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L38-L43>)
 
-Binding adalah informasi di dalam SBOM yang mengikatnya ke satu artefak rilis.
+Binding adalah info di SBOM yang mengikatnya ke satu artifact rilis.
 
 ```go
 type Binding struct {
@@ -66,18 +66,18 @@ type Binding struct {
 ```
 
 <a name="ParseBinding"></a>
-### func [ParseBinding](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L108>)
+### func [ParseBinding](<https://github.com/brii26/release-signer/blob/main/pkg/sbom/sbom.go#L104>)
 
 ```go
 func ParseBinding(data []byte) (Binding, error)
 ```
 
-ParseBinding membaca binding dari SBOM. Field duplikat, BOM, UTF\-8 tidak valid, dan data setelah JSON ditolak. Field lain di luar binding boleh ada, supaya SBOM dari kakas eksternal tetap bisa dipakai.
+ParseBinding baca binding SBOM, tolak duplicate field, BOM, UTF\-8 invalid, dan trailing data, field lain boleh ada.
 
 <details><summary>Example</summary>
 <p>
 
-Generate an SBOM for an artifact and read its binding back.
+Generate SBOM untuk artifact lalu baca balik binding\-nya.
 
 ```go
 package main

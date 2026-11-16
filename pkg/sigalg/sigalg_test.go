@@ -52,7 +52,7 @@ func TestSignAndVerifyRoundtrip(t *testing.T) {
 					t.Fatalf("Verify failed on valid signature")
 				}
 
-				// Verify fails on altered message
+				// Verify gagal kalau message diubah
 				tamperedMsg := append([]byte("tamper:"), msg...)
 				if sigalg.Verify(p, signer.Public(), tamperedMsg, sig) {
 					t.Errorf("Verify succeeded on altered message")
@@ -83,7 +83,7 @@ func TestSignatureTamperBitFlip(t *testing.T) {
 				t.Fatalf("Sign failed: %v", err)
 			}
 
-			// Flip a bit in the middle of the signature
+			// flip 1 bit di tengah signature
 			corruptedSig := make([]byte, len(sig))
 			copy(corruptedSig, sig)
 			corruptedSig[len(sig)/2] ^= 0x01
@@ -116,12 +116,12 @@ func TestSignatureLengthMismatch(t *testing.T) {
 				t.Fatalf("Sign failed: %v", err)
 			}
 
-			// Truncated by 1 byte
+			// dipotong 1 byte
 			if sigalg.Verify(p, signer.Public(), msg, sig[:len(sig)-1]) {
 				t.Errorf("Verify should reject truncated signature")
 			}
 
-			// Extended by 1 byte
+			// ditambah 1 byte
 			extendedSig := append(sig, 0x00)
 			if sigalg.Verify(p, signer.Public(), msg, extendedSig) {
 				t.Errorf("Verify should reject extended signature")
@@ -135,7 +135,7 @@ func TestDoubleHashingGuards(t *testing.T) {
 	h := sha256.Sum256(msg)
 	h2 := sha256.Sum256(h[:])
 
-	// RSA double hash check
+	// cek double hash RSA
 	rsaKey, err := keys.Generate(profile.RSAPSS)
 	if err != nil {
 		t.Fatal(err)
@@ -147,16 +147,16 @@ func TestDoubleHashingGuards(t *testing.T) {
 	rsaPub := rsaKey.Public().(*rsa.PublicKey)
 	opts := &rsa.PSSOptions{SaltLength: 32, Hash: crypto.SHA256}
 
-	// Must pass over single hash h[:]
+	// harus lolos untuk single hash h[:]
 	if err := rsa.VerifyPSS(rsaPub, crypto.SHA256, h[:], rsaSig, opts); err != nil {
 		t.Errorf("rsa.VerifyPSS over h[:] failed: %v", err)
 	}
-	// Must fail over double hash h2[:]
+	// harus gagal untuk double hash h2[:]
 	if err := rsa.VerifyPSS(rsaPub, crypto.SHA256, h2[:], rsaSig, opts); err == nil {
 		t.Errorf("rsa.VerifyPSS unexpectedly succeeded over double hash h2[:]")
 	}
 
-	// ECDSA double hash check
+	// cek double hash ECDSA
 	ecKey, err := keys.Generate(profile.ECDSA)
 	if err != nil {
 		t.Fatal(err)
@@ -169,11 +169,11 @@ func TestDoubleHashingGuards(t *testing.T) {
 	r := new(big.Int).SetBytes(ecSig[:32])
 	s := new(big.Int).SetBytes(ecSig[32:])
 
-	// Must pass over single hash h[:]
+	// harus lolos untuk single hash h[:]
 	if !ecdsa.Verify(ecPub, h[:], r, s) {
 		t.Errorf("ecdsa.Verify over h[:] failed")
 	}
-	// Must fail over double hash h2[:]
+	// harus gagal untuk double hash h2[:]
 	if ecdsa.Verify(ecPub, h2[:], r, s) {
 		t.Errorf("ecdsa.Verify unexpectedly succeeded over double hash h2[:]")
 	}
@@ -187,14 +187,14 @@ func TestRSAPSSRejectNon32ByteSalt(t *testing.T) {
 	msg := []byte("test message")
 	h := sha256.Sum256(msg)
 
-	// Create non-compliant signature with salt length = 20 (PKCS#1 v2.1 default)
+	// signature non-compliant dengan salt length 20 (default PKCS#1 v2.1)
 	badOpts := &rsa.PSSOptions{SaltLength: 20, Hash: crypto.SHA256}
 	badSig, err := rsa.SignPSS(rand.Reader, rsaKey.(*rsa.PrivateKey), crypto.SHA256, h[:], badOpts)
 	if err != nil {
 		t.Fatalf("SignPSS failed: %v", err)
 	}
 
-	// sigalg.Verify strictly requires salt length 32 and must reject this
+	// sigalg.Verify wajib salt length 32, jadi harus ditolak
 	if sigalg.Verify(profile.RSAPSS, rsaKey.Public(), msg, badSig) {
 		t.Errorf("sigalg.Verify should reject RSA-PSS signature with 20-byte salt")
 	}
@@ -253,7 +253,7 @@ func TestRFC8032TestVector1(t *testing.T) {
 	privKey := ed25519.NewKeyFromSeed(seed)
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
-	msg := []byte{} // empty message for TEST 1
+	msg := []byte{} // message kosong untuk TEST 1
 	sig, err := sigalg.Sign(profile.Ed25519, privKey, msg)
 	if err != nil {
 		t.Fatalf("Sign failed: %v", err)
@@ -271,7 +271,7 @@ func TestRFC8032TestVector1(t *testing.T) {
 
 func TestRFC6979TestVectorA25(t *testing.T) {
 	// RFC 6979 Section A.2.5 (P-256, SHA-256, message "sample")
-	// Public key coordinates:
+	// koordinat public key:
 	uxHex := "60FED4BA255A9D31C961EB74C6356D68C049B8923B61FA6CE669622E60F29FB6"
 	uyHex := "7903FE1008B8BC99A41AE9E95628BC64F2F1B20C2D7E9F5177A3C294D4462299"
 
@@ -300,10 +300,7 @@ func TestRFC6979TestVectorA25(t *testing.T) {
 }
 
 func TestSignatureDeterminismAcrossRuns(t *testing.T) {
-	// Basis for U14 scenario:
-	// RSA-PSS uses random salt -> signatures differ.
-	// ECDSA uses CSPRNG/hedged nonce -> signatures differ.
-	// Ed25519 is PureEdDSA deterministic -> signatures are identical.
+	// RSA-PSS (salt acak) dan ECDSA (nonce acak) beda tiap sign, Ed25519 deterministic jadi sama.
 	msg := []byte("consistent manifest message")
 
 	// RSA-PSS

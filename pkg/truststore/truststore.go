@@ -1,4 +1,4 @@
-// Package truststore mengelola kunci publik tepercaya dan izin per paket.
+// Package truststore ngatur public key tepercaya dan izin per package.
 package truststore
 
 import (
@@ -16,10 +16,10 @@ import (
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
-// Schema is the fixed schema value of a trust store file.
+// Schema adalah nilai schema file trust store.
 const Schema = "minisign-trust/v1"
 
-// Errors returned by the trust store functions. Callers match them with errors.Is.
+// Error dari fungsi trust store, cocokkan dengan errors.Is.
 var (
 	ErrFormat   = errors.New("trust store format error")
 	ErrIO       = errors.New("trust store io error")
@@ -31,8 +31,7 @@ var (
 	rePackage = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 )
 
-// Entry is one trusted public key together with the packages it may sign.
-// Public is the parsed key and is never written to JSON.
+// Entry adalah satu public key tepercaya beserta package yang boleh di-sign, Public tidak masuk JSON.
 type Entry struct {
 	KeyID        string           `json:"keyid"`
 	Algorithm    profile.Profile  `json:"algorithm"`
@@ -41,7 +40,7 @@ type Entry struct {
 	Public       crypto.PublicKey `json:"-"`
 }
 
-// Store is a validated trust store. An empty store trusts no key.
+// Store adalah trust store tervalidasi, store kosong tidak percaya key apa pun.
 type Store struct {
 	Keys []Entry
 }
@@ -55,8 +54,7 @@ func Load(path string) (*Store, error) {
 	return parse(data)
 }
 
-// LoadOrEmpty khusus untuk trust add. File rusak, tidak terbaca, atau symlink
-// yang targetnya hilang tetap ditolak; hanya path baru menjadi store kosong.
+// LoadOrEmpty khusus trust add: file rusak atau symlink putus ditolak, hanya path baru jadi store kosong.
 func LoadOrEmpty(path string) (*Store, error) {
 	s, err := Load(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -67,7 +65,7 @@ func LoadOrEmpty(path string) (*Store, error) {
 	return s, err
 }
 
-// Lookup returns the entry whose keyid is keyID.
+// Lookup return entry dengan keyid keyID.
 func (s *Store) Lookup(keyID string) (*Entry, bool) {
 	if s != nil {
 		for i := range s.Keys {
@@ -79,7 +77,7 @@ func (s *Store) Lookup(keyID string) (*Entry, bool) {
 	return nil, false
 }
 
-// Allows reports whether the key may sign package pkg (exact match, no wildcard).
+// Allows cek apakah key boleh sign package pkg (exact match, tanpa wildcard).
 func (e *Entry) Allows(pkg string) bool {
 	return e != nil && slices.Contains(e.Packages, pkg)
 }
@@ -115,7 +113,7 @@ func (s *Store) Add(pubPEM []byte, pkg string) (Entry, bool, error) {
 	return entry, true, nil
 }
 
-// Remove deletes the entry with the given keyid, or returns ErrNotFound.
+// Remove hapus entry dengan keyid tertentu, atau ErrNotFound.
 func (s *Store) Remove(keyID string) error {
 	if s != nil {
 		for i := range s.Keys {
@@ -128,8 +126,7 @@ func (s *Store) Remove(keyID string) error {
 	return fmt.Errorf("%w: %s", ErrNotFound, keyID)
 }
 
-// Save memvalidasi ulang field yang diserialisasi sebelum mengganti file secara
-// atomik. Public hanya cache hasil parse dan tidak pernah masuk JSON.
+// Save validasi ulang field serialisasi lalu ganti file atomik, Public cuma cache, tidak masuk JSON.
 func (s *Store) Save(path string) error {
 	if s == nil {
 		return formatErr("nil store")

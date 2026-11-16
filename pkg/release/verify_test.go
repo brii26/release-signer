@@ -206,7 +206,7 @@ func TestVerifyArtifactTamper(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, trustPath := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("original data"), []string{"app"})
 
-	// Alter 1 byte in artifact
+	// ubah 1 byte artifact
 	if err := os.WriteFile(artPath, []byte("origjnal data"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestVerifyArtifactTamper(t *testing.T) {
 		t.Fatalf("expected exit 1, got %d", res.ExitCode())
 	}
 
-	// Add byte to artifact (size mismatch)
+	// tambah 1 byte (size mismatch)
 	if err := os.WriteFile(artPath, []byte("original data!"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestVerifyInvalidSignature(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, trustPath := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("payload"), []string{"app"})
 
-	// Read bundle, parse and corrupt signature bytes
+	// parse bundle lalu rusak byte signature
 	bundleBytes, err := os.ReadFile(bundlePath)
 	if err != nil {
 		t.Fatal(err)
@@ -258,7 +258,7 @@ func TestVerifyInvalidSignature(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Flip 1 byte of the signature
+	// flip 1 byte signature
 	sigRaw[0] ^= 0xFF
 	tamperedBundle := bundle.Build(manifestRaw, sigRaw)
 	if err := os.WriteFile(bundlePath, tamperedBundle, 0644); err != nil {
@@ -285,7 +285,7 @@ func TestVerifyKeyNotTrusted(t *testing.T) {
 	dir := t.TempDir()
 	signer := generateTestSigner(t, ProfileEd25519)
 
-	// Sign for "app" but trust store only authorizes "other-app"
+	// sign untuk "app" tapi trust store hanya izinkan "other-app"
 	artPath, bundlePath, trustPath := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("payload"), []string{"other-app"})
 
 	res := Verify(VerifyInput{
@@ -309,7 +309,7 @@ func TestVerifyMetadataMismatch(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, trustPath := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("payload"), []string{"app"})
 
-	// Check with different CLI version
+	// cek dengan version CLI beda
 	res := Verify(VerifyInput{
 		ArtifactPath:   artPath,
 		BundlePath:     bundlePath,
@@ -334,7 +334,7 @@ func TestVerifyNonCanonicalManifest(t *testing.T) {
 	_ = os.WriteFile(artPath, artData, 0644)
 
 	artHash := sha256Hex(artData)
-	// Add extra spaces inside manifest (violates canonical formatting)
+	// spasi ekstra di manifest (melanggar canonical)
 	nonCanonicalManifest := fmt.Sprintf(
 		`{ "schema": "minisign-manifest/v1", "package": "app", "version": "1.0.0", "algorithm": "%s", "keyid": "%s", "artifact": { "name": "app.bin", "size": %d, "sha256": "%s" } }`,
 		signer.algo, signer.fingerprint, len(artData), artHash,
@@ -401,7 +401,7 @@ func TestVerifyUnsupportedAlgorithm(t *testing.T) {
 	artPath := filepath.Join(dir, "app.bin")
 	_ = os.WriteFile(artPath, artData, 0644)
 
-	// Manifest with unknown algorithm
+	// manifest dengan algorithm tidak dikenal
 	manifestCanonical := fmt.Sprintf(
 		`{"schema":"minisign-manifest/v1","package":"app","version":"1.0.0","algorithm":"unknown-algo","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 		signer.fingerprint, len(artData), sha256Hex(artData),
@@ -432,7 +432,7 @@ func TestVerifyUnsupportedAlgorithm(t *testing.T) {
 	if res.ExitCode() != 1 {
 		t.Fatalf("expected exit code 1, got %d", res.ExitCode())
 	}
-	// Manifest was parsed, so metadata fields must be populated
+	// manifest terparse, jadi field metadata harus terisi
 	if res.Algorithm == nil || *res.Algorithm != "unknown-algo" {
 		t.Fatalf("expected algorithm in result to be 'unknown-algo', got %v", res.Algorithm)
 	}
@@ -443,7 +443,7 @@ func TestVerifyTrustStoreFormatErrors(t *testing.T) {
 	signer := generateTestSigner(t, ProfileEd25519)
 	artPath, bundlePath, _ := buildFixture(t, dir, signer, "app", "1.0.0", "app.bin", []byte("payload"), []string{"app"})
 
-	// Fingerprint mismatch in trust store
+	// fingerprint tidak cocok di trust store
 	badFp := "0000000000000000000000000000000000000000000000000000000000000000"
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]}]}`,
@@ -463,7 +463,7 @@ func TestVerifyTrustStoreFormatErrors(t *testing.T) {
 		t.Fatalf("expected FORMAT_ERROR on fingerprint mismatch in trust store, got %s (msg: %s)", res.Status, res.Message)
 	}
 
-	// Duplicate keyid in trust store
+	// keyid duplikat di trust store
 	dupTrustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]},{"keyid":"%s","algorithm":"ed25519","public_key_pem":"%s","packages":["app"]}]}`,
 		signer.fingerprint, escapePEM(signer.pubPEM), signer.fingerprint, escapePEM(signer.pubPEM),
@@ -495,7 +495,7 @@ func TestVerifyECDSARZero(t *testing.T) {
 		signer.algo, signer.fingerprint, len(artData), sha256Hex(artData),
 	)
 
-	// Signature with r = 0 (first 32 bytes zero)
+	// signature dengan r = 0 (32 byte pertama nol)
 	rZeroSig := make([]byte, 64)
 	rZeroSig[63] = 1 // s = 1
 
@@ -530,7 +530,7 @@ func TestVerifyBundleTooLarge(t *testing.T) {
 	trustPath := filepath.Join(dir, "trust.json")
 	_ = os.WriteFile(trustPath, []byte(`{"schema":"minisign-trust/v1","keys":[]}`), 0644)
 
-	// Create bundle > 64 KiB
+	// bundle > 64 KiB
 	bigData := make([]byte, 65537)
 	bundlePath := filepath.Join(dir, "big_bundle.json")
 	_ = os.WriteFile(bundlePath, bigData, 0644)
@@ -555,14 +555,14 @@ func TestVerifyManifestVersionModifiedInvalidSignature(t *testing.T) {
 	artPath := filepath.Join(dir, "app.bin")
 	_ = os.WriteFile(artPath, artData, 0644)
 
-	// Sign original manifest for version 1.0.0
+	// sign manifest asli untuk version 1.0.0
 	manifestOrig := fmt.Sprintf(
 		`{"schema":"minisign-manifest/v1","package":"app","version":"1.0.0","algorithm":"%s","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 		signer.algo, signer.fingerprint, len(artData), sha256Hex(artData),
 	)
 	sigBytes := signer.sign(t, []byte(manifestOrig))
 
-	// Tamper manifest version to 1.0.1 (canonical formatting preserved), keep old signature
+	// ubah version ke 1.0.1 (canonical tetap), signature lama dipakai
 	manifestTampered := fmt.Sprintf(
 		`{"schema":"minisign-manifest/v1","package":"app","version":"1.0.1","algorithm":"%s","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 		signer.algo, signer.fingerprint, len(artData), sha256Hex(artData),
@@ -618,10 +618,10 @@ func TestVerifyUnknownKeySameProfile(t *testing.T) {
 	signer1 := generateTestSigner(t, ProfileEd25519)
 	signer2 := generateTestSigner(t, ProfileEd25519)
 
-	// Sign with signer1
+	// sign dengan signer1
 	artPath, bundlePath, _ := buildFixture(t, dir, signer1, "app", "1.0.0", "app.bin", []byte("payload"), []string{"app"})
 
-	// Trust store only has signer2
+	// trust store hanya punya signer2
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"%s","public_key_pem":"%s","packages":["app"]}]}`,
 		signer2.fingerprint, signer2.algo, escapePEM(signer2.pubPEM),
@@ -649,7 +649,7 @@ func TestVerifyKeyProfileMismatch(t *testing.T) {
 	artPath := filepath.Join(dir, "app.bin")
 	_ = os.WriteFile(artPath, artData, 0644)
 
-	// Manifest claims rsa-pss-sha256 with signer's ed25519 keyid
+	// manifest klaim rsa-pss-sha256 tapi keyid ed25519 signer
 	manifestCanonical := fmt.Sprintf(
 		`{"schema":"minisign-manifest/v1","package":"app","version":"1.0.0","algorithm":"%s","keyid":"%s","artifact":{"name":"app.bin","size":%d,"sha256":"%s"}}`,
 		ProfileRSAPSS, signer.fingerprint, len(artData), sha256Hex(artData),
@@ -659,7 +659,7 @@ func TestVerifyKeyProfileMismatch(t *testing.T) {
 	bundlePath := filepath.Join(dir, "bundle.json")
 	_ = os.WriteFile(bundlePath, bundleData, 0644)
 
-	// Trust store has signer with ed25519 algorithm
+	// trust store punya signer dengan ed25519
 	trustJSON := fmt.Sprintf(
 		`{"schema":"minisign-trust/v1","keys":[{"keyid":"%s","algorithm":"%s","public_key_pem":"%s","packages":["app"]}]}`,
 		signer.fingerprint, ProfileEd25519, escapePEM(signer.pubPEM),
@@ -687,7 +687,7 @@ func TestVerifyArtifactRenamed(t *testing.T) {
 	artPath := filepath.Join(dir, "app.bin")
 	_ = os.WriteFile(artPath, artData, 0644)
 
-	// Renamed artifact on disk
+	// artifact di disk diganti nama
 	renamedPath := filepath.Join(dir, "renamed-app.bin")
 	_ = os.WriteFile(renamedPath, artData, 0644)
 

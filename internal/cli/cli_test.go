@@ -113,7 +113,7 @@ func TestKeygenCLI(t *testing.T) {
 		return nil
 	}
 
-	// Missing --algorithm
+	// --algorithm kosong
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"keygen", "--out", filepath.Join(tmpDir, "k")}, &stdout, &stderr)
@@ -122,7 +122,7 @@ func TestKeygenCLI(t *testing.T) {
 		}
 	}
 
-	// Unsupported algorithm
+	// algorithm tidak didukung
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"keygen", "--algorithm", "rsa-pkcs1", "--out", filepath.Join(tmpDir, "k")}, &stdout, &stderr)
@@ -131,7 +131,7 @@ func TestKeygenCLI(t *testing.T) {
 		}
 	}
 
-	// Missing --out
+	// --out kosong
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"keygen", "--algorithm", "ed25519"}, &stdout, &stderr)
@@ -140,7 +140,7 @@ func TestKeygenCLI(t *testing.T) {
 		}
 	}
 
-	// Success path
+	// sukses
 	{
 		var stdout, stderr bytes.Buffer
 		prefix := filepath.Join(tmpDir, "key1")
@@ -153,7 +153,7 @@ func TestKeygenCLI(t *testing.T) {
 		}
 	}
 
-	// Existing file without --force
+	// file sudah ada tanpa --force
 	{
 		prefix := filepath.Join(tmpDir, "key2")
 		privFile := prefix + ".key.pem"
@@ -167,7 +167,7 @@ func TestKeygenCLI(t *testing.T) {
 			t.Fatalf("expected exit 2 when file exists without --force: code=%d err=%s", code, stderr.String())
 		}
 
-		// With --force
+		// pakai --force
 		stdout.Reset()
 		stderr.Reset()
 		code = Run([]string{"keygen", "--algorithm", "ed25519", "--out", prefix, "--force"}, &stdout, &stderr)
@@ -197,7 +197,7 @@ func TestSignCLI(t *testing.T) {
 		return nil
 	}
 
-	// Missing flags
+	// flag kosong
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"sign", "--file", artFile}, &stdout, &stderr)
@@ -206,7 +206,7 @@ func TestSignCLI(t *testing.T) {
 		}
 	}
 
-	// Invalid package name
+	// nama package invalid
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{
@@ -218,7 +218,7 @@ func TestSignCLI(t *testing.T) {
 		}
 	}
 
-	// Artifact missing
+	// artifact tidak ada
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{
@@ -230,7 +230,7 @@ func TestSignCLI(t *testing.T) {
 		}
 	}
 
-	// Success
+	// sukses
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{
@@ -242,7 +242,7 @@ func TestSignCLI(t *testing.T) {
 		}
 	}
 
-	// Bundle exists without --force
+	// bundle sudah ada tanpa --force
 	{
 		if err := os.WriteFile(bundleFile, []byte("{}"), 0644); err != nil {
 			t.Fatal(err)
@@ -256,7 +256,7 @@ func TestSignCLI(t *testing.T) {
 			t.Fatalf("expected exit 2 on existing bundle without --force: code=%d err=%s", code, stderr.String())
 		}
 
-		// With --force
+		// pakai --force
 		stdout.Reset()
 		stderr.Reset()
 		code = Run([]string{
@@ -288,7 +288,7 @@ func TestVerifyCLI(t *testing.T) {
 	origVerify := VerifyAction
 	defer func() { VerifyAction = origVerify }()
 
-	// Missing flags with --json: must output JSON with status INPUT_ERROR, valid: false, exit 2
+	// flag kosong + --json: output JSON INPUT_ERROR, valid false, exit 2
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"verify", "--file", artFile, "--package", "app", "--version", "1.0.0", "--json"}, &stdout, &stderr)
@@ -310,7 +310,7 @@ func TestVerifyCLI(t *testing.T) {
 		}
 	}
 
-	// Missing flags without --json: exit 2, error to stderr
+	// flag kosong tanpa --json: exit 2, error ke stderr
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"verify", "--file", artFile, "--package", "app"}, &stdout, &stderr)
@@ -319,7 +319,7 @@ func TestVerifyCLI(t *testing.T) {
 		}
 	}
 
-	// Success with --json
+	// sukses dengan --json
 	{
 		algo := "ed25519"
 		kid := "deadbeef"
@@ -357,7 +357,7 @@ func TestVerifyCLI(t *testing.T) {
 		}
 	}
 
-	// Success human-readable
+	// sukses, output human-readable
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{
@@ -373,7 +373,7 @@ func TestVerifyCLI(t *testing.T) {
 		}
 	}
 
-	// Verification failure (ARTIFACT_MISMATCH): exit 1
+	// ARTIFACT_MISMATCH: exit 1
 	{
 		VerifyAction = func(p VerifyParams) VerifyResult {
 			return VerifyResult{
@@ -437,7 +437,7 @@ func TestTrustCLI(t *testing.T) {
 		return nil
 	}
 
-	// trust add missing flags
+	// trust add tanpa flag
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "add", "--key", pubFile}, &stdout, &stderr)
@@ -446,7 +446,7 @@ func TestTrustCLI(t *testing.T) {
 		}
 	}
 
-	// trust add success
+	// trust add sukses
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "add", "--key", pubFile, "--package", "app", "--store", storeFile}, &stdout, &stderr)
@@ -455,7 +455,7 @@ func TestTrustCLI(t *testing.T) {
 		}
 	}
 
-	// trust list missing store
+	// trust list tanpa store
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "list"}, &stdout, &stderr)
@@ -464,7 +464,7 @@ func TestTrustCLI(t *testing.T) {
 		}
 	}
 
-	// trust list success
+	// trust list sukses
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "list", "--store", storeFile}, &stdout, &stderr)
@@ -473,7 +473,7 @@ func TestTrustCLI(t *testing.T) {
 		}
 	}
 
-	// trust remove not found: must exit 2
+	// trust remove tidak ketemu: exit 2
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "remove", "--keyid", "notfound", "--store", storeFile}, &stdout, &stderr)
@@ -482,7 +482,7 @@ func TestTrustCLI(t *testing.T) {
 		}
 	}
 
-	// trust remove success
+	// trust remove sukses
 	{
 		var stdout, stderr bytes.Buffer
 		code := Run([]string{"trust", "remove", "--keyid", "knownkey", "--store", storeFile}, &stdout, &stderr)

@@ -23,10 +23,10 @@ import (
 	"github.com/brii26/release-signer/pkg/strictjson"
 )
 
-// Status is the outcome of a verification (Table 2.8).
+// Status adalah hasil verifikasi (Tabel 2.8).
 type Status string
 
-// Verification statuses, in the order the checks run.
+// Status verifikasi, urut sesuai pemeriksaan.
 const (
 	StatusInputError           Status = "INPUT_ERROR"
 	StatusFormatError          Status = "FORMAT_ERROR"
@@ -38,14 +38,14 @@ const (
 	StatusOK                   Status = "OK"
 )
 
-// Profile names as they appear in the manifest algorithm field.
+// Nama profile di field algorithm manifest.
 const (
 	ProfileRSAPSS  = "rsa-pss-sha256"
 	ProfileECDSA   = "ecdsa-p256-sha256"
 	ProfileEd25519 = "ed25519"
 )
 
-// Size limits in bytes for the files Verify reads.
+// Batas ukuran (byte) file yang dibaca Verify.
 const (
 	MaxBundleSize     = 64 * 1024   // 64 KiB
 	MaxManifestSize   = 16 * 1024   // 16 KiB
@@ -57,9 +57,7 @@ var (
 	hex64Regex   = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
-// Result is the verification result (Table 2.9). Algorithm, KeyID, Package, and Version
-// are nil until the manifest could be read. When Valid is false they only explain the
-// failure and must not be treated as trusted data.
+// Result hasil verifikasi (Tabel 2.9), field metadata nil sebelum manifest terbaca, jangan dipercaya kalau Valid false.
 type Result struct {
 	Valid     bool    `json:"valid"`
 	Status    Status  `json:"status"`
@@ -70,7 +68,7 @@ type Result struct {
 	Version   *string `json:"version"`
 }
 
-// ExitCode maps the status to a process exit code: 0 for OK, 2 for INPUT_ERROR, 1 otherwise.
+// ExitCode: 0 untuk OK, 2 untuk INPUT_ERROR, 1 lainnya.
 func (r Result) ExitCode() int {
 	if r.Status == StatusOK {
 		return 0
@@ -81,7 +79,7 @@ func (r Result) ExitCode() int {
 	return 1
 }
 
-// VerifyInput is the input of Verify. Package and Version are the values the user expects.
+// VerifyInput adalah input Verify, Package dan Version adalah nilai yang diharapkan user.
 type VerifyInput struct {
 	ArtifactPath   string
 	BundlePath     string
@@ -109,12 +107,9 @@ type trustEntry struct {
 	pubKey    crypto.PublicKey
 }
 
-// Verify implements the strict 7-stage verification engine specified in Table 2.8.
+// Verify menjalankan verifikasi strict 7 tahap (Tabel 2.8).
 func Verify(in VerifyInput) Result {
-	// =========================================================================
-	// INPUT_ERROR
-	// Options required, package regex, and input files readable.
-	// =========================================================================
+	// INPUT_ERROR: opsi wajib, regex package, file bisa dibaca
 	if in.ArtifactPath == "" {
 		return resultError(StatusInputError, "artifact path is required", nil)
 	}
@@ -149,18 +144,15 @@ func Verify(in VerifyInput) Result {
 		return resultError(StatusInputError, fmt.Sprintf("failed to read artifact: %v", err), nil)
 	}
 
-	// =========================================================================
-	// FORMAT_ERROR
-	// Bundle, manifest, canonical check, and trust store parsing.
-	// =========================================================================
+	// FORMAT_ERROR: parse bundle, manifest, canonical check, trust store
 
-	// --- 2a. Parse Bundle JSON ---
+	// parse bundle JSON
 	manifestRaw, sigRaw, err := bundle.ParseStrict(bundleBytes)
 	if err != nil {
 		return resultError(StatusFormatError, fmt.Sprintf("bundle format error: %v", err), nil)
 	}
 
-	// --- 2b. Parse Manifest JSON & Canonical Check ---
+	// parse manifest JSON dan cek canonical
 	parsedManifest, err := manifest.ParseStrict(manifestRaw)
 	if err != nil {
 		return resultError(StatusFormatError, fmt.Sprintf("manifest format error: %v", err), nil)
@@ -177,7 +169,7 @@ func Verify(in VerifyInput) Result {
 		artifactHash: parsedManifest.Artifact.SHA256,
 	}
 
-	// --- 2c. Parse Trust Store JSON & Keys ---
+	// parse trust store JSON dan key-nya
 	trustStoreVal, err := strictjson.Parse(trustStoreBytes, MaxTrustStoreSize)
 	if err != nil {
 		return resultError(StatusFormatError, fmt.Sprintf("malformed trust store JSON: %v", err), m)
@@ -250,7 +242,7 @@ func Verify(in VerifyInput) Result {
 			pkgs = append(pkgs, pStr)
 		}
 
-		// Validate PEM and SPKI
+		// validasi PEM dan SPKI
 		block, rest := pem.Decode([]byte(pemStr))
 		if block == nil || block.Type != "PUBLIC KEY" || len(bytes.TrimSpace(rest)) > 0 {
 			return resultError(StatusFormatError, fmt.Sprintf("invalid PEM block for keyid %s", kid), m)
@@ -261,7 +253,7 @@ func Verify(in VerifyInput) Result {
 			return resultError(StatusFormatError, fmt.Sprintf("invalid SPKI public key for keyid %s: %v", kid, err), m)
 		}
 
-		// Re-export SPKI DER to verify canonical fingerprint
+		// export ulang SPKI DER buat cek fingerprint canonical
 		derBytes, err := x509.MarshalPKIXPublicKey(pubKey)
 		if err != nil {
 			return resultError(StatusFormatError, fmt.Sprintf("failed to marshal SPKI for keyid %s: %v", kid, err), m)
@@ -271,7 +263,7 @@ func Verify(in VerifyInput) Result {
 			return resultError(StatusFormatError, fmt.Sprintf("keyid %s does not match computed public key fingerprint %s", kid, computedFingerprint), m)
 		}
 
-		// Validate key algorithm matches declared algorithm profile
+		// algorithm key harus sama dengan profile yang dideklarasi
 		if err := validateKeyAlgorithm(pubKey, algo); err != nil {
 			return resultError(StatusFormatError, fmt.Sprintf("key %s parameter mismatch: %v", kid, err), m)
 		}
@@ -285,18 +277,12 @@ func Verify(in VerifyInput) Result {
 		})
 	}
 
-	// =========================================================================
-	// UNSUPPORTED_ALGORITHM
-	// Algorithm in manifest must match one of the 3 supported profiles.
-	// =========================================================================
+	// UNSUPPORTED_ALGORITHM: algorithm harus salah satu dari 3 profile
 	if m.algorithm != ProfileRSAPSS && m.algorithm != ProfileECDSA && m.algorithm != ProfileEd25519 {
 		return resultError(StatusUnsupportedAlgorithm, fmt.Sprintf("algorithm %q is unsupported", m.algorithm), m)
 	}
 
-	// =========================================================================
-	// KEY_NOT_TRUSTED
-	// Keyid in trust store, algorithm matches, package authorized.
-	// =========================================================================
+	// KEY_NOT_TRUSTED: keyid ada di trust store, algorithm cocok, package diizinkan
 	var matchedKey *trustEntry
 	for i := range trustEntries {
 		if trustEntries[i].keyid == m.keyid {
@@ -324,18 +310,12 @@ func Verify(in VerifyInput) Result {
 		return resultError(StatusKeyNotTrusted, fmt.Sprintf("keyid %s is not authorized for package %q", m.keyid, in.Package), m)
 	}
 
-	// =========================================================================
-	// INVALID_SIGNATURE
-	// Cryptographic verification over raw manifest bytes.
-	// =========================================================================
+	// INVALID_SIGNATURE: verify signature atas raw byte manifest
 	if err := verifySignature(m.algorithm, matchedKey.pubKey, manifestRaw, sigRaw); err != nil {
 		return resultError(StatusInvalidSignature, fmt.Sprintf("signature verification failed: %v", err), m)
 	}
 
-	// =========================================================================
-	// METADATA_MISMATCH
-	// CLI arguments must match manifest metadata.
-	// =========================================================================
+	// METADATA_MISMATCH: argumen CLI harus cocok dengan manifest
 	if m.packageName != in.Package {
 		return resultError(StatusMetadataMismatch, fmt.Sprintf("package name %q does not match manifest package %q", in.Package, m.packageName), m)
 	}
@@ -346,10 +326,7 @@ func Verify(in VerifyInput) Result {
 		return resultError(StatusMetadataMismatch, fmt.Sprintf("artifact filename %q does not match manifest artifact %q", filepath.Base(in.ArtifactPath), m.artifactName), m)
 	}
 
-	// =========================================================================
-	// ARTIFACT_MISMATCH
-	// Size and SHA-256 hash must match manifest exactly.
-	// =========================================================================
+	// ARTIFACT_MISMATCH: size dan SHA-256 harus sama dengan manifest
 	if int64(len(artifactBytes)) != m.artifactSize {
 		return resultError(StatusArtifactMismatch, fmt.Sprintf("artifact size %d does not match manifest size %d", len(artifactBytes), m.artifactSize), m)
 	}
@@ -359,10 +336,7 @@ func Verify(in VerifyInput) Result {
 		return resultError(StatusArtifactMismatch, fmt.Sprintf("artifact sha256 %s does not match manifest %s", computedArtHash, m.artifactHash), m)
 	}
 
-	// =========================================================================
-	// OK
-	// All checks passed successfully.
-	// =========================================================================
+	// OK: semua pemeriksaan lolos
 	return Result{
 		Valid:     true,
 		Status:    StatusOK,
@@ -453,7 +427,7 @@ func verifySignature(algo string, pub crypto.PublicKey, manifestBytes, sigBytes 
 		r := new(big.Int).SetBytes(sigBytes[:32])
 		s := new(big.Int).SetBytes(sigBytes[32:])
 
-		// Both r and s must be in [1, n-1]
+		// r dan s harus di [1, n-1]
 		n := ecdsaPub.Curve.Params().N
 		if r.Sign() <= 0 || s.Sign() <= 0 || r.Cmp(n) >= 0 || s.Cmp(n) >= 0 {
 			return errors.New("ECDSA signature r or s out of range [1, n-1]")
